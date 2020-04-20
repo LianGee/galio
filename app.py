@@ -2,18 +2,41 @@ import traceback
 
 from flask import Flask, request
 from flask_cors import CORS
+from flask_socketio import SocketIO
 
 import config
-from common.log import Logger
+from service.galio_namespace import galio_namespace
+from common.logger import Logger
 from common.response import Response
 from model.db import clean_db_session
+from view.build import build_bp
+from view.db_inst import db_inst_bp
+from view.deploy import deploy_bp
+from view.docker import docker_bp
+from view.k8s import k8s_bp
+from view.project import project_bp
+from view.template import template_bp
 from view.user import user_bp
 
 app = Flask(__name__)
 log = Logger(__name__)
 app.config.from_object(config)
 CORS(app, supports_credentials=True)
+socketio = SocketIO(
+    app,
+    engineio_logger=True,
+    logger=True,
+    cors_allowed_origins='*',
+)
+
 app.register_blueprint(user_bp, url_prefix='/user')
+app.register_blueprint(project_bp, url_prefix='/project')
+app.register_blueprint(build_bp, url_prefix='/build')
+app.register_blueprint(template_bp, url_prefix='/template')
+app.register_blueprint(db_inst_bp, url_prefix='/db_inst')
+app.register_blueprint(k8s_bp, url_prefix='/k8s')
+app.register_blueprint(docker_bp, url_prefix='/docker')
+app.register_blueprint(deploy_bp, url_prefix='/deploy')
 
 
 @app.before_request
@@ -50,3 +73,16 @@ def hello():
 @app.route('/favicon.ico')
 def favicon():
     return app.send_static_file('favicon.png')
+
+
+socketio.on_namespace(galio_namespace)
+
+if __name__ == '__main__':
+    socketio.init_app(app, async_mode='gevent')
+    socketio.run(
+        app,
+        use_reloader=config.FLASK_USE_RELOAD,
+        debug=config.DEBUG,
+        host='127.0.0.1',
+        port=config.PORT
+    )

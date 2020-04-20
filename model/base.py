@@ -42,7 +42,8 @@ class BaseModel:
             self.updated_at = datetime.now().timestamp()
             session.add(self)
             session.commit()
-        except Exception:
+        except Exception as e:
+            print(e)
             session.rollback()
         finally:
             session.close()
@@ -53,6 +54,7 @@ class BaseModel:
             session.add(self)
             session.commit()
         except Exception as e:
+            print(e)
             session.rollback()
         finally:
             session.close()
@@ -93,5 +95,5 @@ class BaseModel:
     def fill_model(cls, model, dic):
         for k in dic.keys():
             if hasattr(model, k):
-                setattr(model, k, dic[k])
+                setattr(model, k, dic.get(k))
         return model

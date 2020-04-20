@@ -14,3 +14,11 @@ class ErrorCode:
 
 class HttpCode:
     HTTP_SUCCESS = [201, 200]
+
+
+class BuildType:
+    DIST = 0
+    PYTHON2 = 1
+    PYTHON3 = 2
+    JAVA8_MAVEN_3 = 3
+    JAVA8_GRADLE_4 = 4

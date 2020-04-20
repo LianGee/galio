@@ -47,3 +47,5 @@ __pycache__
 
 build
 
+# qiniu
+.qiniu_pythonsdk_hostscache.json

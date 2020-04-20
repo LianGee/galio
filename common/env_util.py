@@ -8,12 +8,12 @@
 import os
 
 
-def get_env(default_env='PROD'):
+def get_env(default_env='DEV'):
     return os.environ.get('ENV') if os.environ.get('ENV') else default_env
 
 
 def is_prod():
-    return 'PROD' == get_env()
+    return 'PRO' == get_env()
 
 
 def is_dev():

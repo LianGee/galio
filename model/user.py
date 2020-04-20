@@ -12,6 +12,7 @@ from model.db import Model
 
 class User(Model, BaseModel):
     __tablename__ = 'user'
+
     name = Column(String)
     phone = Column(String)
     email = Column(String)

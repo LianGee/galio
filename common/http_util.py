@@ -4,7 +4,7 @@ import requests
 
 from common.constant import HttpCode, ErrorCode
 from common.exception import ServerException
-from common.log import Logger
+from common.logger import Logger
 
 log = Logger(__name__)
 
@@ -23,7 +23,8 @@ class HttpUtil:
         if self.method == 'GET':
             response = requests.get(
                 self.url,
-                headers=self.headers
+                headers=self.headers,
+                verify=False
             )
         if self.method == 'POST':
             response = requests.post(

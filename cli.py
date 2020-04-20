@@ -13,14 +13,12 @@ from flask_script import Manager
 import config
 from app import app
 from model.db import clean_db_session
-from model.user import User
 
 manager = Manager(app)
 
 
 def after_run_begin():
     """speed up model register"""
-    User.select().get(1)
     clean_db_session()
 
 

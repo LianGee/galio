@@ -9,7 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 import config
-from common.log import Logger
+from common.logger import Logger
 
 log = Logger(__name__)
 

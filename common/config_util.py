@@ -39,7 +39,7 @@ class ConfigUtil:
     @classmethod
     @cache.memoize(ttl=60)
     def get_all_properties(cls,
-                           app_id='flask-template',
+                           app_id='galio',
                            cluster_name='default',
                            namespace_name='application'):
         assert app_id is not None

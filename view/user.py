@@ -10,8 +10,8 @@ from flask import Blueprint, request, session, g
 
 from common.config_util import ConfigUtil
 from common.http_util import HttpUtil
-from common.log import Logger
-from common.loged import log_this
+from common.logger import Logger
+from common.log import log_this
 from common.login import login_required
 from common.response import Response
 import config
@@ -52,5 +52,6 @@ def logout():
 
 @user_bp.route('/current')
 @login_required
+@log_this
 def current():
     return Response.success(g.user)

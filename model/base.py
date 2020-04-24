@@ -32,9 +32,10 @@ class BaseModel:
             else:
                 q = session.query(cls, *args, **kwargs)
             return q._clone()
-        except Exception:
+        except Exception as e:
             session.rollback()
             session.close()
+            raise e
 
     def update(self, *args, **kwargs):
         session = self.get_session()
@@ -43,8 +44,8 @@ class BaseModel:
             session.add(self)
             session.commit()
         except Exception as e:
-            print(e)
             session.rollback()
+            raise e
         finally:
             session.close()
 
@@ -54,8 +55,8 @@ class BaseModel:
             session.add(self)
             session.commit()
         except Exception as e:
-            print(e)
             session.rollback()
+            raise e
         finally:
             session.close()
 
@@ -64,8 +65,9 @@ class BaseModel:
         try:
             session.delete(self)
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
+            raise e
         finally:
             session.close()
 
@@ -75,8 +77,9 @@ class BaseModel:
         try:
             session.bulk_insert_mappings(cls, [obj.__dict__ for obj in lst])
             session.commit()
-        except Exception:
+        except Exception as e:
             session.rollback()
+            raise e
         finally:
             session.close()
 

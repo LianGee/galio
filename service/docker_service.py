@@ -20,7 +20,7 @@ class DockerService:
         result = []
         image_names = [image_name[0] for image_name in BuildLog.select(distinct(BuildLog.image_name)).all()]
         for image in images:
-            if image.tags[-1] in image_names:
+            if len(image.tags) > 0 and image.tags[-1] in image_names:
                 result.append({
                     'id': image.id,
                     'name': image.tags[-1],

@@ -18,7 +18,7 @@ class DeployService:
     @classmethod
     def deploy(cls, user, project_id, image_name):
         project = Project.select().get(project_id)
-        if not K8sService.create_namespace(project):
+        if not K8sService.create_namespace(project.name, project.name):
             raise ServerException('创建空间失败')
         template = TemplateService.get_template_by_id(3)
         deploy_template = Template(template.get('content'))
@@ -47,6 +47,20 @@ class DeployService:
         return response
 
     @classmethod
-    def read_namespaced_pod_status(cls, project_id):
+    def replace(cls, name, namespace):
+        pass
+
+    @classmethod
+    def list_pod_status(cls, project_id):
         project = Project.select().get(project_id)
-        return K8sService.read_namespaced_pod_status(namespace=project.name)
+        pod_status = K8sService.list_pod_status(namespace=project.name if project else None)
+        return pod_status
+
+    @classmethod
+    def read_namespaced_pod_log(cls, name, namespace, previous):
+        response = K8sService.read_namespaced_pod_log(
+            name=name,
+            namespace=namespace,
+            previous=previous
+        )
+        return response

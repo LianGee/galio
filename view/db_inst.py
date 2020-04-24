@@ -14,6 +14,13 @@ from service.db_service import DBInstService
 db_inst_bp = Blueprint('db_inst', __name__)
 
 
+@db_inst_bp.route('/save', methods=['POST'])
+@login_required
+@log_this
+def save():
+    return Response.success(data=DBInstService.save(request.json))
+
+
 @db_inst_bp.route('/list')
 @login_required
 @log_this

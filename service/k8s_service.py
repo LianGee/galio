@@ -13,7 +13,6 @@ from common.config_util import ConfigUtil
 from common.exception import ServerException
 from common.http_util import HttpUtil
 from common.logger import Logger
-from model.project import Project
 
 log = Logger(__name__)
 
@@ -141,22 +140,35 @@ class K8sService:
         return pods
 
     @classmethod
-    def read_namespaced_pod_status(cls, namespace):
+    def list_pod_status(cls, namespace=None):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        response = api_instance.list_namespaced_pod(namespace=namespace)
+        if namespace:
+            response = api_instance.list_namespaced_pod(namespace=namespace)
+        else:
+            response = api_instance.list_pod_for_all_namespaces()
         pod_statuses = []
+        events = cls.list_event(namespace=namespace)
+        event_map = {}
+        for event in events:
+            if event_map.get(event.get('pod_name')) is not None:
+                event_map[event.get('pod_name')].append(event)
+            else:
+                event_map[event.get('pod_name')] = [event]
         for pod_status in response.items:
             pod_statuses.append({
                 'name': pod_status.metadata.name,
                 'uid': pod_status.metadata.uid,
+                'namespace': pod_status.metadata.namespace,
                 'host_ip': pod_status.status.host_ip,
                 'pod_ip': pod_status.status.pod_ip,
                 'phase': pod_status.status.phase,
                 'start_time': pod_status.status.start_time,
                 'reason': pod_status.status.reason or pod_status.status.conditions[0].message,
                 'restart_count': pod_status.status.container_statuses[
-                    0].restart_count if pod_status.status.container_statuses else 0
+                    0].restart_count if pod_status.status.container_statuses else 0,
+                'events': event_map.get(pod_status.metadata.name)
             })
+
         return pod_statuses
 
     @classmethod
@@ -256,20 +268,46 @@ class K8sService:
         return response
 
     @classmethod
-    def read_namespaced_pod_log(cls, name, namespace):
+    def read_namespaced_pod_log(cls, name, namespace, previous=False):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        response = api_instance.read_namespaced_pod_log(name=name, namespace=namespace, tail_lines=200)
+        response = api_instance.read_namespaced_pod_log(
+            name=name,
+            namespace=namespace,
+            tail_lines=ConfigUtil.get_int_property(config.K8S_POD_LOG_LENGTH),
+            previous=previous
+        )
         return response
 
     @classmethod
-    def create_namespace(cls, project: Project):
+    def list_event(cls, namespace):
+        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
+        if namespace:
+            events = api_instance.list_namespaced_event(namespace=namespace)
+        else:
+            events = api_instance.list_event_for_all_namespaces()
+        pod_events = []
+        for event in events.items:
+            if event.involved_object.kind == 'Pod':
+                pod_events.append({
+                    'pod_name': event.involved_object.name,
+                    'type': event.type,
+                    'reason': event.reason,
+                    'message': event.message,
+                    'name': event.metadata.name,
+                    'namespace': event.metadata.namespace,
+                    'created_at': event.metadata.creation_timestamp,
+                })
+        return pod_events
+
+    @classmethod
+    def create_namespace(cls, name, namespace):
         # 隔离不同的资源
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
         body = kubernetes.client.V1Namespace()
         body.metadata = kubernetes.client.V1ObjectMeta(
-            name=project.name,
+            name=name,
             labels={
-                'name': project.name,
+                'name': namespace,
             }
         )
         try:
@@ -321,4 +359,13 @@ class K8sService:
                 raise ServerException('删除namespaced ingress 失败')
         api_instance.create_namespaced_ingress(namespace=namespace, body=body)
         response = api_instance.read_namespaced_ingress(name=name, namespace=namespace)
+        return response
+
+    @classmethod
+    def replace_namespaced_pod(cls, name, namespace):
+        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
+        body = kubernetes.client.V1Pod()
+        # body.metadata.name = name
+        # body.metadata.namespace = namespace
+        response = api_instance.replace_namespaced_pod(name=name, namespace=namespace, body=body)
         return response

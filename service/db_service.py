@@ -31,7 +31,14 @@ class DBInstService:
 
     @classmethod
     def save(cls, data):
-        pass
+        if data.get('id') is None:
+            db_inst = DBInst(**data)
+            db_inst.insert()
+        else:
+            db_inst = DBInst.select().get(data.get('id'))
+            db_inst = DBInst.fill_model(db_inst, data)
+            db_inst.update()
+        return True
 
     @classmethod
     def get_all_database(cls, id):

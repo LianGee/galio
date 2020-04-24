@@ -57,6 +57,12 @@ def list_deployment():
     return Response.success(data=K8sService.list_deployment())
 
 
+@k8s_bp.route('/list/event')
+def list_namespaced_event():
+    namespace = request.args.get('namespace')
+    return Response.success(data=K8sService.list_event(namespace))
+
+
 @k8s_bp.route('/list/cluster/role')
 def list_cluster_role():
     return Response.success(data=K8sService.list_cluster_role())
@@ -74,3 +80,10 @@ def read_namespaced_deployment():
     name = request.args.get('name')
     namespace = request.args.get('namespace')
     return Response.success(data=K8sService.read_namespaced_deployment(name=name, namespace=namespace))
+
+
+@k8s_bp.route('/replace/namespaced/pod')
+def replace_namespaced_pod():
+    name = request.args.get('name')
+    namespace = request.args.get('namespace')
+    return Response.success(data=K8sService.replace_namespaced_pod(name, namespace))

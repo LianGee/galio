@@ -18,7 +18,7 @@ JSONIFY_PRETTYPRINT_REGULAR = True
 JSON_AS_ASCII = False
 DEBUG = True
 ADDRESS = '0.0.0.0'
-PORT = 5000
+PORT = 8010
 WORKERS = 1
 FLASK_USE_RELOAD = True
 BASE_DIR = os.path.abspath(os.getcwd())
@@ -62,3 +62,4 @@ QUERY_MAX_SIZE = 'query.max.size'
 # kubernetes auth key
 K8S_HOST = 'k8s.host'
 K8S_SEC = 'k8s.secret'
+K8S_POD_LOG_LENGTH = 'k8s.pod.log.length'

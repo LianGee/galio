@@ -23,7 +23,29 @@ def start():
     return Response.success(data=DeployService.deploy(g.user, project_id, image_name))
 
 
+@deploy_bp.route('/restart', methods=['POST'])
+@login_required
+@log_this
+def restart():
+    pass
+
+
+@deploy_bp.route('/log', methods=['POST'])
+@login_required
+@log_this
+def get_log():
+    namespace = request.json.get('namespace')
+    name = request.json.get('name')
+    previous = request.json.get('previous')
+    return Response.success(data=DeployService.read_namespaced_pod_log(
+        name=name,
+        namespace=namespace,
+        previous=previous
+    ))
+
+
 @deploy_bp.route('/read/namespaced/pod/status')
+@login_required
 def read_namespaced_pod_status():
     project_id = request.args.get('project_id')
-    return Response.success(data=DeployService.read_namespaced_pod_status(project_id))
+    return Response.success(data=DeployService.list_pod_status(project_id))

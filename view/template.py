@@ -38,3 +38,11 @@ def save_template():
     data = request.json
     data['author'] = g.user.name
     return Response.success(TemplateService.save_template(request.json))
+
+
+@template_bp.route('/delete', methods=['DELETE'])
+@login_required
+@log_this
+def delete_template():
+    template_id = request.args.get('template_id')
+    return Response.success(TemplateService.delete_template(template_id))

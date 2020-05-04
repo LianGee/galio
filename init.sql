@@ -1,4 +1,4 @@
-create table if not exists galio.db_inst
+create table if not exists galio.cloud_host
 (
   id         bigint(11) auto_increment comment '主键'
     primary key,
@@ -9,11 +9,11 @@ create table if not exists galio.db_inst
   comment '数据库实例' charset = utf8mb4;
 
 create index idx_created_at
-  on galio.build_log (created_at);
+  on galio.cloud_host (created_at);
 
 create index idx_is_delete
-  on galio.build_log (is_delete);
+  on galio.cloud_host (is_delete);
 
 create index idx_updated_at
-  on galio.build_log (updated_at);
+  on galio.cloud_host (updated_at);
 

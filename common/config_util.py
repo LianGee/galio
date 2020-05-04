@@ -50,6 +50,10 @@ class ConfigUtil:
         else:
             server_url = 'http://dev.apollo.client.bchen.xyz/'
         http_util = HttpUtil(
-            url=f'{server_url}/configfiles/json/{app_id}/{cluster_name}/{namespace_name}'
+            url=f'{server_url}/configfiles/json/{app_id}/{cluster_name}/{namespace_name}',
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': ''
+            }
         )
         return http_util.get().json()

@@ -31,6 +31,7 @@ class DeployService:
         template = TemplateService.get_template_by_id(5)
         ingress_template = Template(template.get('content'))
         ingress_template_yaml = yaml.safe_load(ingress_template.render(project=project))
+        # ingress service 删除发布会造成不可访问，需要探索修改
         ingress_response = K8sService.create_namespaced_ingress(
             namespace=project.name,
             name=project.name,

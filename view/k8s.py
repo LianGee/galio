@@ -67,7 +67,6 @@ def list_namespaced_event():
 def list_cluster_role():
     return Response.success(data=K8sService.list_cluster_role())
 
-
 @k8s_bp.route('/read/namespaced/pod/log')
 def read_namespaced_pod_log():
     name = request.args.get('name')

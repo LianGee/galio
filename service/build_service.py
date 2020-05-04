@@ -41,12 +41,22 @@ class BuildService:
         self.log_file = None
         self.build_log = None
 
-    def gen_nginx_file(self):
-        pass
+    def gen_nginx_conf(self):
+        self.log('generate nginx file begin')
+        template = TemplateService.get_template_by_id(self.project.nginx_template_id)
+        nginx_template = Template(template.get('content'))
+        nginx_conf = nginx_template.render(
+            project=self.project, template=template
+        )
+        self.log(nginx_conf)
+        with open(f"{self.target}/lib/{template.get('name')}", 'w', encoding='utf-8') as f:
+            f.write(nginx_conf)
+        self.log('generate dockerfile success')
+        return f"{self.target}/lib/{template.get('name')}"
 
     def gen_docker_file(self):
         self.log('generate dockerfile begin')
-        template = TemplateService.get_template_by_id(self.project.id)
+        template = TemplateService.get_template_by_id(self.project.docker_template_id)
         docker_template = Template(template.get('content'))
         dockerfile = docker_template.render(
             project=self.project, template=template
@@ -76,11 +86,7 @@ class BuildService:
         CmdUtil.run(cmd, console=self.log)
         self.log('package source code success')
 
-    def build_python(self, version='2'):
-        dockerfile = self.gen_docker_file()
-        self.package_python()
-        cmd = f'docker build -f {dockerfile} -t {self.project.name}:{self.branch} --force-rm {self.target}/lib'
-        CmdUtil.run(cmd, console=self.log)
+    def clean_container(self):
         self.log('清理镜像')
         cmd = 'docker rmi $(docker images -f "dangling=true" -q)'
         CmdUtil.run(cmd, console=self.log, t=False)
@@ -93,8 +99,35 @@ class BuildService:
         CmdUtil.run(cmd, console=self.log, t=False)
         CmdUtil.run('docker images', console=self.log)
 
+    def build_python(self, version='2'):
+        dockerfile = self.gen_docker_file()
+        self.package_python()
+        cmd = f'docker build -f {dockerfile} -t {self.project.name}:{self.branch} --force-rm {self.target}/lib'
+        CmdUtil.run(cmd, console=self.log)
+        self.clean_container()
+
+    def package_dist(self):
+        self.log('package source code begin')
+        self.clean()
+        cmd = f'cd {self.code_path} && npm install'
+        CmdUtil.run(cmd, console=self.log)
+        cmd = f'cd {self.code_path} && npm run build'
+        CmdUtil.run(cmd, console=self.log)
+        cmd = f'cd {self.code_path} && tar czvf {self.project.name}.tar ./dist'
+        CmdUtil.run(cmd, console=self.log)
+        cmd = f'mv {self.code_path}/{self.project.name}.tar {self.target}/lib'
+        CmdUtil.run(cmd, console=self.log)
+        self.log('package source code success')
+
     def build_dist(self):
-        pass
+        if not os.path.exists(f'{self.code_path}/dist'):
+            self.log(f'dist 不存在 {self.code_path}/dist，请本地构建后上传dist文件到git上')
+        self.package_dist()
+        nginx_conf = self.gen_nginx_conf()
+        dockerfile = self.gen_docker_file()
+        cmd = f'docker build -f {dockerfile} -t {self.project.name}:{self.branch} --force-rm {self.target}/lib'
+        CmdUtil.run(cmd, console=self.log)
+        self.clean_container()
 
     def build_java_with_mvn(self, mvn_version='3.6'):
         pass
@@ -150,9 +183,11 @@ class BuildService:
         )
         self.log('初始化仓库')
         git_service.init()
+        self.log('拉取master')
+        git_service.pull()
         self.log('切换分支')
         git_service.check_out_branch()
-        self.log('拉取代码')
+        self.log('拉取分支代码')
         git_service.pull()
         self.log(f'代码拉取完毕: {self.code_path}')
 

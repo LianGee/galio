@@ -143,3 +143,9 @@ class DBInstService:
             )
         cursor = db.cursor()
         return db, cursor
+
+    @classmethod
+    def delete_inst(cls, inst_id):
+        db_inst: DBInst = DBInst.select().get(inst_id)
+        db_inst.delete()
+        return True

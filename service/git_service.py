@@ -26,7 +26,9 @@ class GitService:
             repo = Repo(dir)
         else:
             repo = Repo.init(dir)
-            repo.create_remote(name='origin', url=self.project.git)
+        if repo.remote('origin').exists():
+            repo.delete_remote(repo.remote('origin'))
+        repo.create_remote(name='origin', url=self.project.git)
         # type(repo.git).GIT_PYTHON_TRACE = 'full'
         # logging.basicConfig(level=logging.INFO)
         assert repo.remote().exists()

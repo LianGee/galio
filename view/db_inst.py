@@ -21,6 +21,14 @@ def save():
     return Response.success(data=DBInstService.save(request.json))
 
 
+@db_inst_bp.route('/delete', methods=['DELETE'])
+@login_required
+@log_this
+def delete():
+    inst_id = request.args.get('inst_id')
+    return Response.success(data=DBInstService.delete_inst(inst_id))
+
+
 @db_inst_bp.route('/list')
 @login_required
 @log_this

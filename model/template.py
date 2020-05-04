@@ -14,6 +14,6 @@ class Template(Model, BaseModel):
     __tablename__ = 'template'
 
     name = Column(String)
-    path = Column(String)
+    path = Column(String, default='')
     type = Column(Integer, default=0)
     author = Column(Integer)

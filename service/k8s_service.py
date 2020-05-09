@@ -11,7 +11,6 @@ import kubernetes
 import config
 from common.config_util import ConfigUtil
 from common.exception import ServerException
-from common.http_util import HttpUtil
 from common.logger import Logger
 
 log = Logger(__name__)
@@ -23,26 +22,8 @@ class K8sService:
     def get_api_client(cls):
         kubernetes.config.load_kube_config()
         configuration = kubernetes.client.Configuration()
-        configuration.host = f'{ConfigUtil.get_str_property(config.K8S_HOST)}'
         configuration.api_key['Accept'] = 'application/json'
-        configuration.api_key['authorization'] = ConfigUtil.get_str_property(config.K8S_SEC)
         return kubernetes.client.ApiClient(configuration)
-
-    @classmethod
-    def apiregistration(cls):
-        http_util = HttpUtil(
-            url=f'{ConfigUtil.get_str_property(config.K8S_HOST)}/apis/apiregistration.k8s.io',
-            headers={
-                'Authorization': ConfigUtil.get_str_property(config.K8S_SEC)
-            }
-        )
-        return http_util.request().json()
-
-    @classmethod
-    def k8s_test(cls):
-        api_instance = kubernetes.client.AdmissionregistrationApi(cls.get_api_client())
-        api_response = api_instance.get_api_group()
-        return api_response
 
     @classmethod
     def list_namespace(cls):
@@ -196,11 +177,15 @@ class K8sService:
         services = []
         for service in response.items:
             services.append({
+                'uid': service.metadata.uid,
                 'name': service.metadata.name,
                 'annotations': service.metadata.annotations,
                 'namespace': service.metadata.namespace,
                 'labels': service.metadata.labels,
                 'created_at': service.metadata.creation_timestamp,
+                'type': service.spec.type,
+                'cluster_ip': service.spec.cluster_ip,
+                'external_ip': service.spec.external_i_ps,
                 'ports': [
                     {
                         'name': port.name,
@@ -317,7 +302,7 @@ class K8sService:
             body = json.loads(e.body)
             if body.get('reason') == 'AlreadyExists':
                 return True
-            return False
+            raise ServerException(f'创建namespace {namespace}失败')
 
     @classmethod
     def create_namespaced_deployment(cls, name, namespace, body):
@@ -337,13 +322,12 @@ class K8sService:
     def create_namespaced_service(cls, name, namespace, body):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
         try:
-            api_instance.delete_namespaced_service(name=name, namespace=namespace)
+            api_instance.create_namespaced_service(namespace=namespace, body=body)
         except kubernetes.client.rest.ApiException as e:
-            if e.reason == 'Not Found':
-                log.info(f'namespace {namespace} service {name} exist, just created.')
-            else:
-                raise ServerException('删除namespaced service 失败')
-        api_instance.create_namespaced_service(namespace=namespace, body=body)
+            body = json.loads(e.body)
+            if body.get('reason') == 'AlreadyExists':
+                return True
+            raise ServerException(f'创建service {name} namespace {namespace}失败')
         response = api_instance.read_namespaced_service(name=name, namespace=namespace)
         return response
 
@@ -351,13 +335,12 @@ class K8sService:
     def create_namespaced_ingress(cls, name, namespace, body):
         api_instance = kubernetes.client.ExtensionsV1beta1Api(cls.get_api_client())
         try:
-            api_instance.delete_namespaced_ingress(namespace=namespace, name=name)
+            api_instance.create_namespaced_ingress(namespace=namespace, body=body)
         except kubernetes.client.rest.ApiException as e:
-            if e.reason == 'Not Found':
-                log.info(f'namespace {namespace} ingress {name} exist, just created.')
-            else:
-                raise ServerException('删除namespaced ingress 失败')
-        api_instance.create_namespaced_ingress(namespace=namespace, body=body)
+            body = json.loads(e.body)
+            if body.get('reason') == 'AlreadyExists':
+                return True
+            raise ServerException(f'创建ingress {name} namespace {namespace}失败')
         response = api_instance.read_namespaced_ingress(name=name, namespace=namespace)
         return response
 
@@ -365,7 +348,5 @@ class K8sService:
     def replace_namespaced_pod(cls, name, namespace):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
         body = kubernetes.client.V1Pod()
-        # body.metadata.name = name
-        # body.metadata.namespace = namespace
         response = api_instance.replace_namespaced_pod(name=name, namespace=namespace, body=body)
         return response

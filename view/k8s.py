@@ -12,16 +12,6 @@ from service.k8s_service import K8sService
 k8s_bp = Blueprint('k8s', __name__)
 
 
-@k8s_bp.route('/get/group')
-def get_group():
-    return Response.success(data=K8sService.apiregistration())
-
-
-@k8s_bp.route('/test')
-def test():
-    return Response.success(data=K8sService.k8s_test())
-
-
 @k8s_bp.route('/list/namespace')
 def list_namespace():
     return Response.success(data=K8sService.list_namespace())
@@ -66,6 +56,7 @@ def list_namespaced_event():
 @k8s_bp.route('/list/cluster/role')
 def list_cluster_role():
     return Response.success(data=K8sService.list_cluster_role())
+
 
 @k8s_bp.route('/read/namespaced/pod/log')
 def read_namespaced_pod_log():

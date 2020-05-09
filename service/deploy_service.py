@@ -28,23 +28,23 @@ class DeployService:
             namespace=project.name,
             body=deploy_template_yaml
         )
-        template = TemplateService.get_template_by_id(5)
-        ingress_template = Template(template.get('content'))
-        ingress_template_yaml = yaml.safe_load(ingress_template.render(project=project))
+        # template = TemplateService.get_template_by_id(5)
+        # ingress_template = Template(template.get('content'))
+        # ingress_template_yaml = yaml.safe_load(ingress_template.render(project=project))
         # ingress service 删除发布会造成不可访问，需要探索修改
-        ingress_response = K8sService.create_namespaced_ingress(
-            namespace=project.name,
-            name=project.name,
-            body=ingress_template_yaml
-        )
-        template = TemplateService.get_template_by_id(6)
-        service_template = Template(template.get('content'))
-        service_template_yaml = yaml.safe_load(service_template.render(project=project))
-        service_response = K8sService.create_namespaced_service(
-            namespace=project.name,
-            name=project.name,
-            body=service_template_yaml
-        )
+        # ingress_response = K8sService.create_namespaced_ingress(
+        #     namespace=project.name,
+        #     name=project.name,
+        #     body=ingress_template_yaml
+        # )
+        # template = TemplateService.get_template_by_id(6)
+        # service_template = Template(template.get('content'))
+        # service_template_yaml = yaml.safe_load(service_template.render(project=project))
+        # service_response = K8sService.create_namespaced_service(
+        #     namespace=project.name,
+        #     name=project.name,
+        #     body=service_template_yaml
+        # )
         return response
 
     @classmethod

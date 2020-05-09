@@ -63,4 +63,8 @@ QUERY_MAX_SIZE = 'query.max.size'
 K8S_HOST = 'k8s.host'
 K8S_SEC = 'k8s.secret'
 K8S_POD_LOG_LENGTH = 'k8s.pod.log.length'
+K8S_NODE_PORT_RANGE = 'k8s.node.port.range'
 
+# domain
+DOMAIN_EXTERNAL = 'domain.external'
+DOMAIN_INTERNAL = 'domain.internal'

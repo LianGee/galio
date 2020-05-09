@@ -23,7 +23,7 @@ class TemplateService:
         template = Template.select().get(id)
         res = template.to_dict()
         if template.path is not '':
-            http_util = HttpUtil(url=template.path)
+            http_util = HttpUtil(url=res.get('path'))
             res['content'] = http_util.get().text
         else:
             res['content'] = ''

@@ -26,3 +26,8 @@ def list_domain():
 @log_this
 def save_record():
     return Response.success(data=DomainService.save_domain_record(request.json))
+
+
+@domain_bp.route('/generate/valid/node_port')
+def generate_valid_node_port():
+    return Response.success(data=DomainService.generate_valid_node_port())

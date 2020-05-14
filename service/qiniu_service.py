@@ -37,5 +37,5 @@ class QiniuService:
         ret, res = put_data(up_token=token, key=file_name, data=data, mime_type='text/plain')
         log.info(f'upload data ret={ret} res={res}')
         # 路径最好带参数，否则会走CDN被缓存掉
-        return f"http://{ConfigUtil.get_str_property(key=config.QINIU_GALIO_DOMAIN)}/" \
+        return f"{ConfigUtil.get_str_property(key=config.QINIU_GALIO_DOMAIN)}/" \
             f"{ret.get('key')}?hash={ret.get('hash')}"

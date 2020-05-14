@@ -6,6 +6,7 @@
 # @Desc  :
 import json
 import math
+from copy import copy
 from datetime import datetime
 
 from sqlalchemy import Column, BigInteger, Boolean
@@ -34,8 +35,9 @@ class BaseModel:
             return q._clone()
         except Exception as e:
             session.rollback()
-            session.close()
             raise e
+        finally:
+            session.close()
 
     def update(self, *args, **kwargs):
         session = self.get_session()
@@ -84,10 +86,10 @@ class BaseModel:
             session.close()
 
     def to_dict(self):
-        result = self.__dict__.copy()
+        result = copy(self.__dict__)
         for k in result.keys():
             try:
-                value = json.loads(result[k])
+                value = json.loads(result[k], encoding="utf-8")
                 result[k] = value
             except Exception:
                 continue

@@ -39,6 +39,7 @@ class ProjectService:
         projects = Project.select().filter(Project.user_name == user_name).all()
         results = []
         for project in projects:
+            project.nginx_proxies = json.loads(project.nginx_proxies or '[]')
             result = project.to_dict()
             results.append(result)
         return results

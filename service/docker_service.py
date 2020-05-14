@@ -9,6 +9,7 @@ import docker
 from sqlalchemy import func, distinct
 
 from model.build import BuildLog
+from model.project import Project
 
 
 class DockerService:
@@ -28,4 +29,21 @@ class DockerService:
                     'size': image.attrs.get('Size'),
                     'created_at': image.attrs.get('Created'),
                 })
+        return result
+
+    @classmethod
+    def list_project_image(cls, project_id):
+        images = cls.client.images.list()
+        project = Project.select().get(project_id)
+        result = []
+        for image in images:
+            if len(image.tags) == 0 or image.tags[-1].split(':')[0] != project.name:
+                continue
+            result.append({
+                'id': image.id,
+                'name': image.tags[-1],
+                'author': image.attrs.get('Author'),
+                'size': image.attrs.get('Size'),
+                'created_at': image.attrs.get('Created'),
+            })
         return result

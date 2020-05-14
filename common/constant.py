@@ -17,8 +17,8 @@ class HttpCode:
 
 
 class BuildType:
-    DIST = 0
-    PYTHON2 = 1
-    PYTHON3 = 2
-    JAVA8_MAVEN_3 = 3
-    JAVA8_GRADLE_4 = 4
+    NPM = 0
+    TAR = 1
+    MVN = 2
+    GRADLE = 3
+    USER_DEFINE = 4

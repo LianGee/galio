@@ -23,7 +23,7 @@ build_bp = Blueprint('build', __name__)
 @log_this
 @cache.memoize(ttl=60 * 5)
 def branches():
-    project = Project.select().get(1)
+    project = Project.select().get(request.args.get('project_id'))
     git_service = GitService(
         workspace=f'{ConfigUtil.get_str_property(config.GIT_WORKSPACE)}/project',
         project=project

@@ -99,12 +99,21 @@ class BuildService:
         CmdUtil.run(cmd, console=self.log, t=False)
         CmdUtil.run('docker images', console=self.log)
 
-    def build_python(self, version='2'):
+    def tar_build(self):
         dockerfile = self.gen_docker_file()
         self.package_python()
         cmd = f'docker build -f {dockerfile} -t {self.project.name}:{self.branch} --force-rm {self.target}/lib'
         CmdUtil.run(cmd, console=self.log)
         self.clean_container()
+
+    def mvn_build(self):
+        pass
+
+    def gradle_build(self):
+        pass
+
+    def user_define_build(self):
+        pass
 
     def package_dist(self):
         self.log('package source code begin')
@@ -119,40 +128,34 @@ class BuildService:
         CmdUtil.run(cmd, console=self.log)
         self.log('package source code success')
 
-    def build_dist(self):
+    def npm_build(self):
         if not os.path.exists(f'{self.code_path}/dist'):
-            self.log(f'dist 不存在 {self.code_path}/dist，请本地构建后上传dist文件到git上')
-        self.package_dist()
-        nginx_conf = self.gen_nginx_conf()
+            self.package_dist()
+        self.gen_nginx_conf()
         dockerfile = self.gen_docker_file()
         cmd = f'docker build -f {dockerfile} -t {self.project.name}:{self.branch} --force-rm {self.target}/lib'
         CmdUtil.run(cmd, console=self.log)
         self.clean_container()
 
-    def build_java_with_mvn(self, mvn_version='3.6'):
-        pass
-
-    def build_java_with_gradle(self, gradle_version='4.10.14'):
-        pass
-
     def build(self):
         self.before_build()
         try:
-            if self.project.build_type == BuildType.DIST:
-                self.build_dist()
-            elif self.project.build_type == BuildType.PYTHON2:
-                self.build_python(version='2')
-            elif self.project.build_type == BuildType.PYTHON3:
-                self.build_python(version='3')
-            elif self.project.build_type == BuildType.JAVA8_MAVEN_3:
-                self.build_java_with_mvn()
-            elif self.project.build_type == BuildType.JAVA8_GRADLE_4:
-                self.build_java_with_gradle()
+            if self.project.build_type == BuildType.NPM:
+                self.npm_build()
+            elif self.project.build_type == BuildType.TAR:
+                self.tar_build()
+            elif self.project.build_type == BuildType.MVN:
+                self.mvn_build()
+            elif self.project.build_type == BuildType.GRADLE:
+                self.gradle_build()
+            elif self.project.build_type == BuildType.USER_DEFINE:
+                self.user_define_build()
             else:
                 raise ServerException(msg=f'unknown build type {self.project.build_type}')
             self.status = 1
-        except Exception:
+        except Exception as e:
             self.status = 2
+            self.log(e.__str__)
         finally:
             if self.log_file:
                 self.log_file.close()

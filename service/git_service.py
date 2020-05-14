@@ -4,7 +4,6 @@
 # @Author: zaoshu
 # @Date  : 2020-04-10
 # @Desc  :
-import logging
 import os
 
 from git import Repo
@@ -26,11 +25,9 @@ class GitService:
             repo = Repo(dir)
         else:
             repo = Repo.init(dir)
-        if repo.remote('origin').exists():
+        if len(repo.remotes) != 0 and repo.remote('origin').exists():
             repo.delete_remote(repo.remote('origin'))
         repo.create_remote(name='origin', url=self.project.git)
-        # type(repo.git).GIT_PYTHON_TRACE = 'full'
-        # logging.basicConfig(level=logging.INFO)
         assert repo.remote().exists()
         self.dir = dir
         self.repo = repo

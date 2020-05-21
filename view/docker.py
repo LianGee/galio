@@ -20,3 +20,8 @@ def list_image():
 @docker_bp.route('/list/project/image')
 def list_project_image():
     return Response.success(data=DockerService.list_project_image(request.args.get('project_id')))
+
+
+@docker_bp.route('/test')
+def clean_images():
+    return Response.success(data=DockerService.test())

@@ -10,14 +10,13 @@ from datetime import datetime
 from flask_socketio import emit
 from jinja2 import Template
 
-import config
 from common.cmd_util import CmdUtil
-from common.config_util import ConfigUtil
 from common.constant import BuildType
 from common.exception import ServerException
 from common.logger import Logger
 from model.build import BuildLog
 from model.project import Project
+from service.docker_service import DockerService
 from service.git_service import GitService
 from service.template_service import TemplateService
 
@@ -45,9 +44,8 @@ class BuildService:
         self.log('generate nginx file begin')
         template = TemplateService.get_template_by_id(self.project.nginx_template_id)
         nginx_template = Template(template.get('content'))
-        nginx_conf = nginx_template.render(
-            project=self.project, template=template
-        )
+        log.info(template.get('content'))
+        nginx_conf = nginx_template.render(project=self.project.to_dict())
         self.log(nginx_conf)
         with open(f"{self.target}/lib/{template.get('name')}", 'w', encoding='utf-8') as f:
             f.write(nginx_conf)
@@ -86,25 +84,27 @@ class BuildService:
         CmdUtil.run(cmd, console=self.log)
         self.log('package source code success')
 
-    def clean_container(self):
-        self.log('清理镜像')
-        cmd = 'docker rmi $(docker images -f "dangling=true" -q)'
-        CmdUtil.run(cmd, console=self.log, t=False)
-        cmd = "docker rmi $(docker images | grep \"None\" | awk '{print $3}')"
-        CmdUtil.run(cmd, console=self.log, t=False)
-        self.log('清理容器')
-        cmd = "docker stop $(docker ps -a | grep \"Exited\" | awk '{print $1 }')"
-        CmdUtil.run(cmd, console=self.log, t=False)
-        cmd = "docker rm $(docker ps -a | grep \"Exited\" | awk '{print $1 }')"
-        CmdUtil.run(cmd, console=self.log, t=False)
-        CmdUtil.run('docker images', console=self.log)
+    def npm_build(self):
+        if not os.path.exists(f'{self.code_path}/dist'):
+            self.package_dist()
+        self.gen_nginx_conf()
+        dockerfile = self.gen_docker_file()
+        DockerService.build(
+            path=f'{self.target}/lib',
+            dockerfile=dockerfile,
+            tag=f'{self.project.name}:{self.branch}',
+            console=self.log
+        )
 
     def tar_build(self):
         dockerfile = self.gen_docker_file()
         self.package_python()
-        cmd = f'docker build -f {dockerfile} -t {self.project.name}:{self.branch} --force-rm {self.target}/lib'
-        CmdUtil.run(cmd, console=self.log)
-        self.clean_container()
+        DockerService.build(
+            path=f'{self.target}/lib',
+            dockerfile=dockerfile,
+            tag=f'{self.project.name}:{self.branch}',
+            console=self.log
+        )
 
     def mvn_build(self):
         pass
@@ -128,15 +128,6 @@ class BuildService:
         CmdUtil.run(cmd, console=self.log)
         self.log('package source code success')
 
-    def npm_build(self):
-        if not os.path.exists(f'{self.code_path}/dist'):
-            self.package_dist()
-        self.gen_nginx_conf()
-        dockerfile = self.gen_docker_file()
-        cmd = f'docker build -f {dockerfile} -t {self.project.name}:{self.branch} --force-rm {self.target}/lib'
-        CmdUtil.run(cmd, console=self.log)
-        self.clean_container()
-
     def build(self):
         self.before_build()
         try:
@@ -155,7 +146,6 @@ class BuildService:
             self.status = 1
         except Exception as e:
             self.status = 2
-            self.log(e.__str__)
         finally:
             if self.log_file:
                 self.log_file.close()
@@ -216,3 +206,20 @@ class BuildService:
         with open(log_path) as f:
             content = f.read()
         return content
+
+    # todo 启用定时任务，每个用户保留10条日志
+    @classmethod
+    def clean_log(cls):
+        logs = BuildLog.select().order_by(BuildLog.created_at.desc()).all()
+        user_record_map = {}
+        for _log in logs:
+            if user_record_map.get(_log.user_name) is None:
+                user_record_map[_log.user_name] = [_log.id]
+            elif len(user_record_map.get(_log.user_name, [])) <= 10:
+                user_record_map[_log.user_name].append(_log.id)
+        not_delete_id = []
+        for user_name in user_record_map.keys():
+            not_delete_id.extend(user_record_map.get(user_name, []))
+        delete_logs = BuildLog.select().filter(BuildLog.id.notin_(not_delete_id))
+        for delete_log in delete_logs:
+            delete_log.delete()

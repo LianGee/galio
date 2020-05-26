@@ -46,3 +46,8 @@ def get_log_content():
     log_path = request.args.get('log_path')
     assert id is not None
     return Response.success(data=BuildService.get_log_content(log_path))
+
+
+@build_bp.route('/test', methods=['GET'])
+def test():
+    return Response.success(data=BuildService.clean_log())

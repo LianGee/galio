@@ -49,3 +49,10 @@ def get_log():
 def read_namespaced_pod_status():
     project_id = request.args.get('project_id')
     return Response.success(data=DeployService.list_pod_status(project_id))
+
+# todo 增加image
+# todo pod status 通过labelselector 筛选 app=akalid, release=cannary
+# todo 增加发布的env配置
+# todo 增加重启
+# todo deploy 日志
+# todo 日志收集

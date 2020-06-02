@@ -207,19 +207,19 @@ class BuildService:
             content = f.read()
         return content
 
-    # todo 启用定时任务，每个用户保留10条日志
+    # todo 启用定时任务，每个项目保留20次构建
     @classmethod
     def clean_log(cls):
         logs = BuildLog.select().order_by(BuildLog.created_at.desc()).all()
-        user_record_map = {}
+        project_record_map = {}
         for _log in logs:
-            if user_record_map.get(_log.user_name) is None:
-                user_record_map[_log.user_name] = [_log.id]
-            elif len(user_record_map.get(_log.user_name, [])) <= 10:
-                user_record_map[_log.user_name].append(_log.id)
+            if project_record_map.get(_log.project_name) is None:
+                project_record_map[_log.project_name] = [_log.id]
+            elif len(project_record_map.get(_log.project_name, [])) <= 20:
+                project_record_map[_log.project_name].append(_log.id)
         not_delete_id = []
-        for user_name in user_record_map.keys():
-            not_delete_id.extend(user_record_map.get(user_name, []))
+        for project_name in project_record_map.keys():
+            not_delete_id.extend(project_record_map.get(project_name, []))
         delete_logs = BuildLog.select().filter(BuildLog.id.notin_(not_delete_id))
         for delete_log in delete_logs:
             delete_log.delete()

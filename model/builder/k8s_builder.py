@@ -3,7 +3,8 @@
 # @File  : k8s_builder.py
 # @Author: zaoshu
 # @Date  : 2020-06-04
-# @Desc  : 
+# @Desc  :
+import math
 
 
 class K8sBuilder:
@@ -14,7 +15,7 @@ class K8sBuilder:
             'uid': namespace.metadata.uid,
             'name': namespace.metadata.name,
             'annotations': namespace.metadata.annotations,
-            'created_at': namespace.metadata.creation_timestamp,
+            'created_at': math.floor(namespace.metadata.creation_timestamp.timestamp()),
             'phase': namespace.status.phase
         }
 
@@ -34,7 +35,7 @@ class K8sBuilder:
             'annotations': node.metadata.annotations,
             'labels': node.metadata.labels,
             'status': node.status.conditions[-1].type,
-            'created_at': node.metadata.creation_timestamp,
+            'created_at': math.floor(node.metadata.creation_timestamp.timestamp()),
         }
 
     @classmethod
@@ -43,7 +44,7 @@ class K8sBuilder:
             'uid': deployment.metadata.uid,
             'name': deployment.metadata.name,
             'namespace': deployment.metadata.namespace,
-            'created_at': deployment.metadata.creation_timestamp,
+            'created_at': math.floor(deployment.metadata.creation_timestamp.timestamp()),
             'labels': deployment.metadata.labels,
             'container': [
                 {
@@ -70,8 +71,11 @@ class K8sBuilder:
             'annotations': replica.metadata.annotations,
             'namespace': replica.metadata.namespace,
             'labels': replica.metadata.labels,
-            'created_at': replica.metadata.creation_timestamp,
-            'available_replicas': replica.status.available_replicas,
-            'ready_replicas': replica.status.ready_replicas,
-            'status': replica.status,
+            'created_at': math.floor(replica.metadata.creation_timestamp.timestamp()),
+            'status': {
+                'available_replicas': replica.status.available_replicas,
+                'ready_replicas': replica.status.ready_replicas,
+                'replicas': replica.status.replicas,
+                'fully_labeled_replicas': replica.status.fully_labeled_replicas
+            },
         }

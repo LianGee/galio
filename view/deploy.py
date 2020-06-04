@@ -51,13 +51,6 @@ def read_namespaced_pod_status():
     return Response.success(data=DeployService.list_pod_status(project_id))
 
 
-@deploy_bp.route('/list/namespace/pod/status')
-@login_required
-def list_namespace_pod_status():
-    project_id = request.args.get('project_id')
-    assert project_id is not None
-    return Response.success(data=DeployService.list_namespace_pod_status(project_id))
-
 # todo 增加image
 # todo pod status 通过labelselector 筛选 app=akalid, release=cannary
 # todo 增加发布的env配置

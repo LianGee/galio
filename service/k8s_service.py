@@ -7,6 +7,7 @@
 import json
 
 import kubernetes
+from kubernetes import watch
 
 import config
 from common.config_util import ConfigUtil
@@ -62,7 +63,7 @@ class K8sService:
             namespace=project.namespace,
             label_selector=label_selector
         ), events)
-        replicas = cls.convert_replica(cls.get_labeled_replicas(label_selector))
+        replicas = cls.get_labeled_replicas(label_selector)
         status = 1 if replicas[0].get('available_replicas') == replicas[0].get('ready_replicas') else 0
         overview = {
             'image': deployments[0].get('container')[0].get('image'),
@@ -87,12 +88,44 @@ class K8sService:
         return cls.convert_deployment(response)
 
     @classmethod
-    def get_labeled_replicas(cls, label_selector):
+    def get_labeled_replicas(cls, label_selector, send_replica):
         api_instance = kubernetes.client.AppsV1Api(cls.get_api_client())
-        response = api_instance.list_replica_set_for_all_namespaces(
-            label_selector=label_selector
-        )
-        return response
+        while True:
+            stream = watch.Watch().stream(
+                api_instance.list_replica_set_for_all_namespaces,
+                label_selector=label_selector,
+                watch=True,
+                pretty=True
+            )
+            for replica in stream:
+                send_replica(replica.get('raw_object'))
+
+    @classmethod
+    def get_namespace_labeled_pods(cls, namespace, label_selector, send_pod=None):
+        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
+        while True:
+            stream = watch.Watch().stream(
+                api_instance.list_namespaced_pod,
+                namespace=namespace,
+                label_selector=label_selector,
+                watch=True,
+                pretty=True
+            )
+            for pod in stream:
+                send_pod(pod.get('raw_object'))
+
+    @classmethod
+    def get_namespace_event(cls, namespace, send_event):
+        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
+        while True:
+            stream = watch.Watch().stream(
+                api_instance.list_namespaced_event,
+                namespace=namespace,
+                watch=True,
+                pretty=True
+            )
+            for event in stream:
+                send_event(event.get('raw_object'))
 
     @classmethod
     def list_namespaced_pod(cls, namespace):

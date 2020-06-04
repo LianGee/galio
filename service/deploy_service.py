@@ -60,13 +60,26 @@ class DeployService:
         return pod_status
 
     @classmethod
-    def list_namespace_pod_status(cls, project_id):
+    def get_label_selector(cls, project_id):
         project = Project.select().get(project_id)
-        return K8sService.list_namespace_pod_status(project)
+        deployments = K8sService.get_deployment_by_project(project)
+        labels = deployments[0].get('labels', {})
+        return ','.join(list(map(lambda key: f'{key}={labels.get(key)}', labels))), project
 
     @classmethod
-    def list_namespace_labeled_replica(cls, project_id):
-        return K8sService.list_replica_set()
+    def list_project_replica(cls, project_id, send_replica):
+        label_selector, project = cls.get_label_selector(project_id)
+        K8sService.get_labeled_replicas(label_selector, send_replica=send_replica)
+
+    @classmethod
+    def list_project_pod(cls, project_id, send_pod):
+        label_selector, project = cls.get_label_selector(project_id)
+        K8sService.get_namespace_labeled_pods(project.namespace, label_selector, send_pod)
+
+    @classmethod
+    def list_project_event(cls, project_id, send_event):
+        label_selector, project = cls.get_label_selector(project_id)
+        K8sService.get_namespace_event(project.namespace, send_event)
 
     @classmethod
     def read_namespaced_pod_log(cls, name, namespace, previous):

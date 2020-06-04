@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 
 import config
+from service.deploy_namespace import deploy_namespace
 from service.build_namespace import build_namespace
 from common.logger import Logger
 from common.response import Response
@@ -80,6 +81,7 @@ def favicon():
 
 
 socketio.on_namespace(build_namespace)
+socketio.on_namespace(deploy_namespace)
 
 if __name__ == '__main__':
     socketio.init_app(app, async_mode='gevent')

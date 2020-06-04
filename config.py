@@ -40,8 +40,8 @@ SESSION_PERMANENT = True
 PERMANENT_SESSION_LIFETIME = ConfigUtil.get_int_property('PERMANENT_SESSION_LIFETIME')
 REDIS_CACHE = ConfigUtil.get_dict_property('REDIS_CACHE')
 # socket
-SOCKET_NAMESPACE = ConfigUtil.get_str_property('socket.namespace')
-
+SOCKET_BUILD_NAMESPACE = ConfigUtil.get_str_property('socket.build.namespace')
+SOCKET_DEPLOY_NAMESPACE = ConfigUtil.get_str_property('socket.deploy.namespace')
 # app config key
 CAS_URL = 'cas.url'
 FRONT_URL = 'front.url'

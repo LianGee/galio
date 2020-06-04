@@ -29,3 +29,12 @@ def save():
 @log_this
 def project_list():
     return Response.success(data=ProjectService.list(g.user.name))
+
+
+@project_bp.route('/query', methods=['GET'])
+@login_required
+@log_this
+def query_project_by_id():
+    project_id = request.args.get('project_id')
+    assert project_id is not None
+    return Response.success(data=ProjectService.query_project_by_id(project_id))

@@ -12,6 +12,8 @@ import config
 from common.config_util import ConfigUtil
 from common.exception import ServerException
 from common.logger import Logger
+from model.builder.k8s_builder import K8sBuilder
+from model.project import Project
 
 log = Logger(__name__)
 
@@ -31,13 +33,7 @@ class K8sService:
         api_response = api_instance.list_namespace()
         namespaces = []
         for namespace in api_response.items:
-            namespaces.append({
-                'uid': namespace.metadata.uid,
-                'name': namespace.metadata.name,
-                'annotations': namespace.metadata.annotations,
-                'created_at': namespace.metadata.creation_timestamp,
-                'phase': namespace.status.phase
-            })
+            namespaces.append(K8sBuilder.namespace_builder(namespace))
         return namespaces
 
     @classmethod
@@ -46,79 +42,63 @@ class K8sService:
         response = api_instance.list_node()
         nodes = []
         for node in response.items:
-            nodes.append({
-                'uid': node.metadata.uid,
-                'name': node.metadata.name,
-                'annotations': node.metadata.annotations,
-                'labels': node.metadata.labels,
-                'status': node.status.conditions[-1].type,
-                'created_at': node.metadata.creation_timestamp,
-            })
+            nodes.append(K8sBuilder.node_builder(node))
         return nodes
 
     @classmethod
-    def list_pod(cls):
+    def list_pod_for_all_namespaces(cls):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
         response = api_instance.list_pod_for_all_namespaces()
-        pods = []
-        for pod in response.items:
-            pods.append({
-                'uid': pod.metadata.uid,
-                'name': pod.metadata.name,
-                'annotations': pod.metadata.annotations,
-                'labels': pod.metadata.labels,
-                'phase': pod.status.phase,
-                'created_at': pod.metadata.creation_timestamp,
-                'namespace': pod.metadata.namespace,
-                'container_statuses': [
-                    {
-                        'ready': status.ready,
-                        'restart_count': status.restart_count
-                    } for status in pod.status.container_statuses
-                ],
-                'host_ip': pod.status.host_ip,
-                'pod_ip': pod.status.pod_ip
-            })
-        return pods
+        return cls.convert_pod(response)
 
     @classmethod
-    def get_state(cls, status):
-        if status.running:
-            return 'running'
-        elif status.terminated:
-            return 'terminated'
-        elif status.waiting:
-            return 'waiting'
-        return 'unknown'
+    def list_namespace_pod_status(cls, project: Project):
+        deployments = cls.get_deployment_by_project(project)
+        events = cls.list_pod_events(namespace=project.namespace)
+        labels = deployments[0].get('labels', {})
+        label_selector = ','.join(list(map(lambda key: f'{key}={labels.get(key)}', labels)))
+        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
+        pods = cls.convert_pod(api_instance.list_namespaced_pod(
+            namespace=project.namespace,
+            label_selector=label_selector
+        ), events)
+        replicas = cls.convert_replica(cls.get_labeled_replicas(label_selector))
+        status = 1 if replicas[0].get('available_replicas') == replicas[0].get('ready_replicas') else 0
+        overview = {
+            'image': deployments[0].get('container')[0].get('image'),
+            'available_replicas': replicas[0].get('available_replicas'),
+            'ready_replicas': replicas[0].get('ready_replicas'),
+            'status': status,
+            'label_selector': label_selector
+        }
+        return {
+            'pods': pods,
+            'deployment': deployments,
+            'replicas': replicas,
+            'overview': overview
+        }
+
+    @classmethod
+    def get_deployment_by_project(cls, project: Project):
+        api_instance = kubernetes.client.AppsV1Api(cls.get_api_client())
+        response = api_instance.list_deployment_for_all_namespaces(
+            field_selector=f'metadata.name={project.name},metadata.namespace={project.namespace}',
+        )
+        return cls.convert_deployment(response)
+
+    @classmethod
+    def get_labeled_replicas(cls, label_selector):
+        api_instance = kubernetes.client.AppsV1Api(cls.get_api_client())
+        response = api_instance.list_replica_set_for_all_namespaces(
+            label_selector=label_selector
+        )
+        return response
 
     @classmethod
     def list_namespaced_pod(cls, namespace):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
         response = api_instance.list_namespaced_pod(namespace=namespace)
-        pods = []
-        for pod in response.items:
-            pods.append({
-                'uid': pod.metadata.uid,
-                'name': pod.metadata.name,
-                'annotations': pod.metadata.annotations,
-                'labels': pod.metadata.labels,
-                'phase': pod.status.phase,
-                'created_at': pod.metadata.creation_timestamp,
-                'namespace': pod.metadata.namespace,
-                'container_statuses': [
-                    {
-                        'ready': status.ready,
-                        'restart_count': status.restart_count,
-                        'state': cls.get_state(status.state),
-                        'name': status.name,
-                        'image': status.image,
-                        'container_id': status.container_id
-                    } for status in pod.status.container_statuses or []
-                ],
-                'host_ip': pod.status.host_ip,
-                'pod_ip': pod.status.pod_ip
-            })
-        return pods
+        return cls.convert_pod(response)
 
     @classmethod
     def list_pod_status(cls, namespace=None):
@@ -128,7 +108,7 @@ class K8sService:
         else:
             response = api_instance.list_pod_for_all_namespaces()
         pod_statuses = []
-        events = cls.list_event(namespace=namespace)
+        events = cls.list_pod_events(namespace=namespace)
         event_map = {}
         for event in events:
             if event_map.get(event.get('pod_name')) is not None:
@@ -156,19 +136,7 @@ class K8sService:
     def list_replica_set(cls):
         api_instance = kubernetes.client.AppsV1Api(cls.get_api_client())
         response = api_instance.list_replica_set_for_all_namespaces()
-        replica_set = []
-        for replica in response.items:
-            replica_set.append({
-                'uid': replica.metadata.uid,
-                'name': replica.metadata.name,
-                'annotations': replica.metadata.annotations,
-                'namespace': replica.metadata.namespace,
-                'labels': replica.metadata.labels,
-                'created_at': replica.metadata.creation_timestamp,
-                'status': replica.status,
-                'pods': f'{replica.status.ready_replicas or 0}/{replica.status.available_replicas or 0}'
-            })
-        return replica_set
+        return cls.convert_replica(response)
 
     @classmethod
     def list_service(cls):
@@ -210,41 +178,14 @@ class K8sService:
         response = api_instance.list_cluster_role()
         roles = []
         for role in response.items:
-            roles.append({
-                'uid': role.metadata.uid,
-                'name': role.metadata.name,
-                'created_at': role.metadata.creation_timestamp,
-            })
+            roles.append(K8sBuilder.role_builder(role))
         return roles
 
     @classmethod
     def list_deployment(cls):
         api_instance = kubernetes.client.AppsV1Api(cls.get_api_client())
         response = api_instance.list_deployment_for_all_namespaces()
-        deployments = []
-        for deployment in response.items:
-            deployments.append({
-                'uid': deployment.metadata.uid,
-                'name': deployment.metadata.name,
-                'namespace': deployment.metadata.namespace,
-                'created_at': deployment.metadata.creation_timestamp,
-                'container': [
-                    {
-                        'env': [
-                            {
-                                'name': env.name,
-                                'value': env.value
-                            } for env in container.env
-                        ] if container.env else [],
-                        'ports': container.ports,
-                        'command': container.command,
-                        'image': container.image,
-                        'image_pull_policy': container.image_pull_policy,
-                        'args': container.args
-                    } for container in deployment.spec.template.spec.containers
-                ]
-            })
-        return deployments
+        return cls.convert_deployment(response)
 
     @classmethod
     def read_namespaced_deployment(cls, name, namespace):
@@ -264,10 +205,10 @@ class K8sService:
         return response
 
     @classmethod
-    def list_event(cls, namespace):
+    def list_pod_events(cls, namespace):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
         if namespace:
-            events = api_instance.list_namespaced_event(namespace=namespace)
+            events = api_instance.list_namespaced_event(namespace=namespace, pretty=True)
         else:
             events = api_instance.list_event_for_all_namespaces()
         pod_events = []
@@ -286,7 +227,6 @@ class K8sService:
 
     @classmethod
     def create_namespace(cls, name, namespace):
-        # 隔离不同的资源
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
         body = kubernetes.client.V1Namespace()
         body.metadata = kubernetes.client.V1ObjectMeta(
@@ -350,3 +290,52 @@ class K8sService:
         body = kubernetes.client.V1Pod()
         response = api_instance.replace_namespaced_pod(name=name, namespace=namespace, body=body)
         return response
+
+    @classmethod
+    def get_state(cls, status):
+        if status.running:
+            return 'running'
+        elif status.terminated:
+            return 'terminated'
+        elif status.waiting:
+            return 'waiting'
+        return 'unknown'
+
+    @classmethod
+    def convert_deployment(cls, response):
+        deployments = []
+        for deployment in response.items:
+            deployments.append(K8sBuilder.deployment_builder(deployment))
+        return deployments
+
+    @classmethod
+    def convert_replica(cls, response):
+        replica_set = []
+        for replica in response.items:
+            replica_set.append(K8sBuilder.replica_builder(replica))
+        return replica_set
+
+    @classmethod
+    def convert_pod(cls, response, events=[]):
+        pods = []
+        event_map = {}
+        for event in events:
+            if event_map.get(event.get('pod_name')) is not None:
+                event_map[event.get('pod_name')].append(event)
+            else:
+                event_map[event.get('pod_name')] = [event]
+        for pod in response.items:
+            pods.append({
+                'name': pod.metadata.name,
+                'uid': pod.metadata.uid,
+                'namespace': pod.metadata.namespace,
+                'host_ip': pod.status.host_ip,
+                'pod_ip': pod.status.pod_ip,
+                'phase': pod.status.phase,
+                'start_time': pod.status.start_time,
+                'reason': pod.status.reason or pod.status.conditions[0].message,
+                'restart_count': pod.status.container_statuses[
+                    0].restart_count if pod.status.container_statuses else 0,
+                'events': event_map.get(pod.metadata.name)
+            })
+        return pods

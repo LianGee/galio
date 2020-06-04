@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @File  : galio_namespace.py
+# @File  : build_namespace.py
 # @Author: zaoshu
 # @Date  : 2020-04-10
 # @Desc  :
@@ -15,10 +15,10 @@ from model.project import Project
 from service.build_service import BuildService
 
 
-class GalioNamespace(Namespace):
+class BuildNamespace(Namespace):
 
     def __init__(self, namespace):
-        super(GalioNamespace, self).__init__(namespace=namespace)
+        super(BuildNamespace, self).__init__(namespace=namespace)
 
     def on_connect(self):
         self.console('connect')
@@ -46,4 +46,4 @@ class GalioNamespace(Namespace):
         emit('console', f"[{datetime.now().strftime('%y-%m-%d %H:%M:%S')}]-{message}")
 
 
-galio_namespace = GalioNamespace(namespace=config.SOCKET_NAMESPACE)
+build_namespace = BuildNamespace(namespace=config.SOCKET_BUILD_NAMESPACE)

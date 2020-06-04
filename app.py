@@ -5,7 +5,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 
 import config
-from service.galio_namespace import galio_namespace
+from service.build_namespace import build_namespace
 from common.logger import Logger
 from common.response import Response
 from model.db import clean_db_session
@@ -79,7 +79,7 @@ def favicon():
     return app.send_static_file('favicon.png')
 
 
-socketio.on_namespace(galio_namespace)
+socketio.on_namespace(build_namespace)
 
 if __name__ == '__main__':
     socketio.init_app(app, async_mode='gevent')

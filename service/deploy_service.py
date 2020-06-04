@@ -56,8 +56,17 @@ class DeployService:
     @classmethod
     def list_pod_status(cls, project_id):
         project = Project.select().get(project_id)
-        pod_status = K8sService.list_pod_status(namespace=project.name if project else None)
+        pod_status = K8sService.list_pod_status(namespace=project.namespace)
         return pod_status
+
+    @classmethod
+    def list_namespace_pod_status(cls, project_id):
+        project = Project.select().get(project_id)
+        return K8sService.list_namespace_pod_status(project)
+
+    @classmethod
+    def list_namespace_labeled_replica(cls, project_id):
+        return K8sService.list_replica_set()
 
     @classmethod
     def read_namespaced_pod_log(cls, name, namespace, previous):

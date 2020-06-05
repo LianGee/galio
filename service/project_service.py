@@ -43,3 +43,7 @@ class ProjectService:
             result = project.to_dict()
             results.append(result)
         return results
+
+    @classmethod
+    def query_project_by_id(cls, project_id):
+        return Project.select().get(project_id)

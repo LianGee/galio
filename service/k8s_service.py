@@ -111,8 +111,15 @@ class K8sService:
                 watch=True,
                 pretty=True
             )
+            pod_map = {}
             for pod in stream:
-                send_pod(pod.get('raw_object'))
+                action = pod.get('type')
+                obj = pod.get('raw_object')
+                if action == 'DELETED':
+                    pod_map.pop(obj.get('metadata').get('name'))
+                else:
+                    pod_map[obj.get('metadata').get('name')] = obj
+                send_pod(list(pod_map.values()))
 
     @classmethod
     def get_namespace_event(cls, namespace, send_event):

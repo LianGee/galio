@@ -63,8 +63,10 @@ class DeployService:
     def get_label_selector(cls, project_id):
         project = Project.select().get(project_id)
         deployments = K8sService.get_deployment_by_project(project)
-        labels = deployments[0].get('labels', {})
-        return ','.join(list(map(lambda key: f'{key}={labels.get(key)}', labels))), project
+        if len(deployments) == 0:
+            return None, project
+        match_labels = deployments[0].get('match_labels', {})
+        return ','.join(list(map(lambda key: f'{key}={match_labels.get(key)}', match_labels))), project
 
     @classmethod
     def list_project_replica(cls, project_id, send_replica):

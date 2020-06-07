@@ -46,6 +46,7 @@ class K8sBuilder:
             'namespace': deployment.metadata.namespace,
             'created_at': math.floor(deployment.metadata.creation_timestamp.timestamp()),
             'labels': deployment.metadata.labels,
+            'match_labels': deployment.spec.selector.match_labels,
             'container': [
                 {
                     'env': [

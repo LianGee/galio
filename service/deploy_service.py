@@ -21,7 +21,7 @@ class DeployService:
         if not K8sService.create_namespace(project.name, project.name):
             raise ServerException('创建空间失败')
         template = TemplateService.get_template_by_id(3)
-        deploy_template = Template(template.get('content'))
+        deploy_template = Template(template.content)
         deploy_template_yaml = yaml.safe_load(deploy_template.render(project=project, image_name=image_name))
         response = K8sService.create_namespaced_deployment(
             name=project.name,
@@ -30,7 +30,7 @@ class DeployService:
         )
         # 创建service
         template = TemplateService.get_template_by_id(6)
-        service_template = Template(template.get('content'))
+        service_template = Template(template.content)
         service_template_yaml = yaml.safe_load(service_template.render(project=project))
         service_response = K8sService.create_namespaced_service(
             namespace=project.name,
@@ -39,7 +39,7 @@ class DeployService:
         )
         # 创建ingress
         template = TemplateService.get_template_by_id(5)
-        ingress_template = Template(template.get('content'))
+        ingress_template = Template(template.content)
         ingress_template_yaml = yaml.safe_load(ingress_template.render(project=project))
         # ingress service 删除发布会造成不可访问，需要探索修改
         ingress_response = K8sService.create_namespaced_ingress(
@@ -54,17 +54,13 @@ class DeployService:
         pass
 
     @classmethod
-    def list_pod_status(cls, project_id):
-        project = Project.select().get(project_id)
-        pod_status = K8sService.list_pod_status(namespace=project.namespace)
-        return pod_status
-
-    @classmethod
     def get_label_selector(cls, project_id):
         project = Project.select().get(project_id)
         deployments = K8sService.get_deployment_by_project(project)
-        labels = deployments[0].get('labels', {})
-        return ','.join(list(map(lambda key: f'{key}={labels.get(key)}', labels))), project
+        if len(deployments) == 0:
+            return None, project
+        match_labels = deployments[0].get('match_labels', {})
+        return ','.join(list(map(lambda key: f'{key}={match_labels.get(key)}', match_labels))), project
 
     @classmethod
     def list_project_replica(cls, project_id, send_replica):

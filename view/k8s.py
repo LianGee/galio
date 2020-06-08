@@ -22,11 +22,6 @@ def list_node():
     return Response.success(data=K8sService.list_node())
 
 
-@k8s_bp.route('/list/pod')
-def list_pod():
-    return Response.success(data=K8sService.list_pod_for_all_namespaces())
-
-
 @k8s_bp.route('/list/replica/set')
 def list_replica_set():
     return Response.success(data=K8sService.list_replica_set())

@@ -17,3 +17,4 @@ class Template(Model, BaseModel):
     content = Column(Text)
     type = Column(Integer, default=0)
     author = Column(Integer)
+    description = Column(Text)

@@ -50,12 +50,6 @@ SERVER_URL = 'server.url'
 # workspace
 GIT_WORKSPACE = 'git.workspace'
 
-# qiniu
-QINIU_ACCESS_KEY = 'qiniu.access_key'
-QINIU_SECRET_KEY = 'qiniu.secret_key'
-QINIU_GALIO_BUCKET = 'qiniu.galio.bucket'
-QINIU_GALIO_DOMAIN = 'qiniu.galio.domain'
-
 # query max size
 QUERY_MAX_SIZE = 'query.max.size'
 

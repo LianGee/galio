@@ -47,39 +47,6 @@ class K8sService:
         return nodes
 
     @classmethod
-    def list_pod_for_all_namespaces(cls):
-        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        response = api_instance.list_pod_for_all_namespaces()
-        return cls.convert_pod(response)
-
-    @classmethod
-    def list_namespace_pod_status(cls, project: Project):
-        deployments = cls.get_deployment_by_project(project)
-        events = cls.list_pod_events(namespace=project.namespace)
-        labels = deployments[0].get('labels', {})
-        label_selector = ','.join(list(map(lambda key: f'{key}={labels.get(key)}', labels)))
-        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        pods = cls.convert_pod(api_instance.list_namespaced_pod(
-            namespace=project.namespace,
-            label_selector=label_selector
-        ), events)
-        replicas = cls.get_labeled_replicas(label_selector)
-        status = 1 if replicas[0].get('available_replicas') == replicas[0].get('ready_replicas') else 0
-        overview = {
-            'image': deployments[0].get('container')[0].get('image'),
-            'available_replicas': replicas[0].get('available_replicas'),
-            'ready_replicas': replicas[0].get('ready_replicas'),
-            'status': status,
-            'label_selector': label_selector
-        }
-        return {
-            'pods': pods,
-            'deployment': deployments,
-            'replicas': replicas,
-            'overview': overview
-        }
-
-    @classmethod
     def get_deployment_by_project(cls, project: Project):
         api_instance = kubernetes.client.AppsV1Api(cls.get_api_client())
         response = api_instance.list_deployment_for_all_namespaces(
@@ -139,38 +106,6 @@ class K8sService:
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
         response = api_instance.list_namespaced_pod(namespace=namespace)
         return cls.convert_pod(response)
-
-    @classmethod
-    def list_pod_status(cls, namespace=None):
-        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        if namespace:
-            response = api_instance.list_namespaced_pod(namespace=namespace)
-        else:
-            response = api_instance.list_pod_for_all_namespaces()
-        pod_statuses = []
-        events = cls.list_pod_events(namespace=namespace)
-        event_map = {}
-        for event in events:
-            if event_map.get(event.get('pod_name')) is not None:
-                event_map[event.get('pod_name')].append(event)
-            else:
-                event_map[event.get('pod_name')] = [event]
-        for pod_status in response.items:
-            pod_statuses.append({
-                'name': pod_status.metadata.name,
-                'uid': pod_status.metadata.uid,
-                'namespace': pod_status.metadata.namespace,
-                'host_ip': pod_status.status.host_ip,
-                'pod_ip': pod_status.status.pod_ip,
-                'phase': pod_status.status.phase,
-                'start_time': pod_status.status.start_time,
-                'reason': pod_status.status.reason or pod_status.status.conditions[0].message,
-                'restart_count': pod_status.status.container_statuses[
-                    0].restart_count if pod_status.status.container_statuses else 0,
-                'events': event_map.get(pod_status.metadata.name)
-            })
-
-        return pod_statuses
 
     @classmethod
     def list_replica_set(cls):

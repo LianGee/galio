@@ -4,9 +4,7 @@
 # @Author: zaoshu
 # @Date  : 2020-04-13
 # @Desc  :
-from common.http_util import HttpUtil
 from model.template import Template
-from service.qiniu_service import QiniuService
 
 
 class TemplateService:

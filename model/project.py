@@ -28,5 +28,6 @@ class Project(Model, BaseModel):
     nginx_proxies = Column(Text, default='[]')
     domain = Column(String)
     port = Column(Integer, default=30080)
-    service_type = Column(Integer, default=1)
     service_domain = Column(String)
+    svc_template_id = Column(BigInteger)
+    ingress_template_id = Column(BigInteger)

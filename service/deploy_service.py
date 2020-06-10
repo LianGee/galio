@@ -20,7 +20,7 @@ class DeployService:
         project = Project.select().get(project_id)
         if not K8sService.create_namespace(project.name, project.name):
             raise ServerException('创建空间失败')
-        template = TemplateService.get_template_by_id(3)
+        template = TemplateService.get_template_by_id(project.deployment_template_id)
         deploy_template = Template(template.content)
         deploy_template_yaml = yaml.safe_load(deploy_template.render(project=project, image_name=image_name))
         response = K8sService.create_namespaced_deployment(
@@ -29,7 +29,7 @@ class DeployService:
             body=deploy_template_yaml
         )
         # 创建service
-        template = TemplateService.get_template_by_id(6)
+        template = TemplateService.get_template_by_id(project.svc_template_id)
         service_template = Template(template.content)
         service_template_yaml = yaml.safe_load(service_template.render(project=project))
         service_response = K8sService.create_namespaced_service(
@@ -38,7 +38,7 @@ class DeployService:
             body=service_template_yaml
         )
         # 创建ingress
-        template = TemplateService.get_template_by_id(5)
+        template = TemplateService.get_template_by_id(project.ingress_template_id)
         ingress_template = Template(template.content)
         ingress_template_yaml = yaml.safe_load(ingress_template.render(project=project))
         # ingress service 删除发布会造成不可访问，需要探索修改

@@ -29,5 +29,6 @@ class Project(Model, BaseModel):
     domain = Column(String)
     port = Column(Integer, default=30080)
     service_domain = Column(String)
+    deployment_template_id = Column(BigInteger)
     svc_template_id = Column(BigInteger)
     ingress_template_id = Column(BigInteger)

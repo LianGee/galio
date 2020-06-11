@@ -159,7 +159,7 @@ class BuildService:
             image_name=self.image_name,
             description=self.description,
             status=self.status,
-            log_path=self.log_path
+            log_path=self.log_path,
         )
         self.build_log.insert()
         if not os.path.exists(self.log_dir):

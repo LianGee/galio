@@ -230,7 +230,7 @@ class K8sService:
             else:
                 raise ServerException('删除namespaced deployment失败')
         api_instance.create_namespaced_deployment(namespace=namespace, body=body)
-        response = api_instance.read_namespaced_deployment(name=name, namespace=namespace)
+        response = api_instance.read_namespaced_deployment(name=name, namespace=namespace, pretty=True)
         return response
 
     @classmethod
@@ -243,7 +243,7 @@ class K8sService:
             if body.get('reason') == 'AlreadyExists':
                 return True
             raise ServerException(f'创建service {name} namespace {namespace}失败')
-        response = api_instance.read_namespaced_service(name=name, namespace=namespace)
+        response = api_instance.read_namespaced_service(name=name, namespace=namespace, pretty=True)
         return response
 
     @classmethod
@@ -256,7 +256,7 @@ class K8sService:
             if body.get('reason') == 'AlreadyExists':
                 return True
             raise ServerException(f'创建ingress {name} namespace {namespace}失败')
-        response = api_instance.read_namespaced_ingress(name=name, namespace=namespace)
+        response = api_instance.read_namespaced_ingress(name=name, namespace=namespace, pretty=True)
         return response
 
     @classmethod

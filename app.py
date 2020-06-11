@@ -27,8 +27,8 @@ app.config.from_object(config)
 CORS(app, supports_credentials=True)
 socketio = SocketIO(
     app,
-    engineio_logger=True,
-    logger=True,
+    engineio_logger=log.logger,
+    logger=False,
     cors_allowed_origins='*',
 )
 
@@ -90,5 +90,6 @@ if __name__ == '__main__':
         use_reloader=config.FLASK_USE_RELOAD,
         debug=config.DEBUG,
         host='0.0.0.0',
-        port=config.PORT
+        port=config.PORT,
+        log_output=False
     )

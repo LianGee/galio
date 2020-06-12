@@ -10,7 +10,7 @@ from flask_socketio import Namespace, emit
 
 import config
 from common.config_util import ConfigUtil
-from model.build import BuildLog
+from model.build_log import BuildLog
 from model.project import Project
 from service.build_service import BuildService
 

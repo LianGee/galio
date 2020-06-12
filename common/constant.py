@@ -22,3 +22,11 @@ class BuildType:
     MVN = 2
     GRADLE = 3
     USER_DEFINE = 4
+
+
+class DeployStatus:
+    INIT = 0
+    NAMESPACE = 1
+    DEPLOYMENT = 2
+    SERVICE = 3
+    INGRESS = 4

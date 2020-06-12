@@ -14,7 +14,7 @@ from common.cmd_util import CmdUtil
 from common.constant import BuildType
 from common.exception import ServerException
 from common.logger import Logger
-from model.build import BuildLog
+from model.build_log import BuildLog
 from model.project import Project
 from service.docker_service import DockerService
 from service.git_service import GitService
@@ -159,7 +159,7 @@ class BuildService:
             image_name=self.image_name,
             description=self.description,
             status=self.status,
-            log_path=self.log_path
+            log_path=self.log_path,
         )
         self.build_log.insert()
         if not os.path.exists(self.log_dir):

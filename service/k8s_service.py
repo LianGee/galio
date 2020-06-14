@@ -9,8 +9,6 @@ import json
 import kubernetes
 from kubernetes import watch
 
-import config
-from common.config_util import ConfigUtil
 from common.exception import ServerException
 from common.logger import Logger
 from model.builder.k8s_builder import K8sBuilder
@@ -76,60 +74,77 @@ class K8sService:
     @classmethod
     def get_labeled_replicas(cls, label_selector, send_replica):
         api_instance = kubernetes.client.AppsV1Api(cls.get_api_client())
-        while True:
-            stream = watch.Watch().stream(
-                api_instance.list_replica_set_for_all_namespaces,
-                label_selector=label_selector,
-                watch=True,
-                pretty=True
-            )
-            for replica in stream:
-                send_replica(replica.get('raw_object'))
+        stream = watch.Watch().stream(
+            api_instance.list_replica_set_for_all_namespaces,
+            label_selector=label_selector,
+            watch=True,
+            pretty=True
+        )
+        for replica in stream:
+            send_replica(replica.get('raw_object'))
 
     @classmethod
     def get_namespace_labeled_pods(cls, namespace, label_selector, send_pod=None):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        while True:
-            stream = watch.Watch().stream(
-                api_instance.list_namespaced_pod,
-                namespace=namespace,
-                label_selector=label_selector,
-                watch=True,
-                pretty=True
-            )
-            pod_map = {}
-            for pod in stream:
-                action = pod.get('type')
-                obj = pod.get('raw_object')
-                if action == 'DELETED':
-                    pod_map.pop(obj.get('metadata').get('name'))
-                else:
-                    pod_map[obj.get('metadata').get('name')] = obj
-                send_pod(list(pod_map.values()))
+        stream = watch.Watch().stream(
+            api_instance.list_namespaced_pod,
+            namespace=namespace,
+            label_selector=label_selector,
+            watch=True,
+            pretty=True
+        )
+        pod_map = {}
+        for pod in stream:
+            action = pod.get('type')
+            obj = pod.get('raw_object')
+            if action == 'DELETED':
+                pod_map.pop(obj.get('metadata').get('name'))
+            else:
+                pod_map[obj.get('metadata').get('name')] = obj
+            send_pod(list(pod_map.values()))
 
     @classmethod
     def get_namespace_event(cls, namespace, send_event):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        while True:
-            stream = watch.Watch().stream(
-                api_instance.list_namespaced_event,
-                namespace=namespace,
-                watch=True,
-                pretty=True
-            )
-            for event in stream:
-                send_event(event.get('raw_object'))
+        stream = watch.Watch().stream(
+            api_instance.list_namespaced_event,
+            namespace=namespace,
+            watch=True,
+            pretty=True
+        )
+        for event in stream:
+            send_event(event.get('raw_object'))
 
     @classmethod
-    def get_namespaced_pod_log(cls, name, namespace, previous, send_log):
+    def get_namespaced_pod_log(
+            cls,
+            name,
+            namespace,
+            trace,
+            previous,
+            tail_lines,
+            send_log
+    ):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        log = api_instance.read_namespaced_pod_log(
+        send_log(api_instance.read_namespaced_pod_log(
             name=name,
             namespace=namespace,
-            tail_lines=ConfigUtil.get_int_property(config.K8S_POD_LOG_LENGTH),
+            tail_lines=tail_lines,
             previous=previous
+        ))
+        w = watch.Watch()
+        stream = w.stream(
+            api_instance.read_namespaced_pod_log,
+            name=name,
+            namespace=namespace,
+            tail_lines=tail_lines,
+            previous=previous,
+            follow=True,
         )
-        send_log(log)
+        for evnet in stream:
+            send_log(evnet)
+            if not trace:
+                w.stop()
 
     @classmethod
     def create_namespace(cls, name, namespace):

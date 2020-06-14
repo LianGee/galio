@@ -10,6 +10,7 @@ from flask_socketio import Namespace, emit
 
 import config
 from service.deploy_service import DeployService
+from service.k8s_service import K8sService
 
 
 class DeployNamespace(Namespace):
@@ -39,10 +40,14 @@ class DeployNamespace(Namespace):
         namespace = message.get('namespace')
         name = message.get('name')
         previous = message.get('previous', False)
-        DeployService.list_log(
+        trace = message.get('trace')
+        tail_lines = message.get('tail_lines')
+        K8sService.get_namespaced_pod_log(
             name=name,
             namespace=namespace,
+            trace=trace,
             previous=previous,
+            tail_lines=tail_lines,
             send_log=self.send_log
         )
 

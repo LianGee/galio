@@ -107,12 +107,3 @@ class DeployService:
     def list_project_event(cls, project_id, send_event):
         label_selector, project = cls.get_label_selector(project_id)
         K8sService.get_namespace_event(project.namespace, send_event)
-
-    @classmethod
-    def list_log(cls, name, namespace, previous, send_log):
-        K8sService.get_namespaced_pod_log(
-            name=name,
-            namespace=namespace,
-            previous=previous,
-            send_log=send_log
-        )

@@ -109,10 +109,10 @@ class DeployService:
         K8sService.get_namespace_event(project.namespace, send_event)
 
     @classmethod
-    def read_namespaced_pod_log(cls, name, namespace, previous):
-        response = K8sService.read_namespaced_pod_log(
+    def list_log(cls, name, namespace, previous, send_log):
+        K8sService.get_namespaced_pod_log(
             name=name,
             namespace=namespace,
-            previous=previous
+            previous=previous,
+            send_log=send_log
         )
-        return response

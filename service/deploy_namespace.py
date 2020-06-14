@@ -35,6 +35,17 @@ class DeployNamespace(Namespace):
         project_id = message.get('project_id')
         DeployService.list_project_event(project_id, send_event=self.send_event)
 
+    def on_log(self, message):
+        namespace = message.get('namespace')
+        name = message.get('name')
+        previous = message.get('previous', False)
+        DeployService.list_log(
+            name=name,
+            namespace=namespace,
+            previous=previous,
+            send_log=self.send_log
+        )
+
     def send_replica(self, data):
         emit('replica', data)
 
@@ -43,6 +54,9 @@ class DeployNamespace(Namespace):
 
     def send_event(self, data):
         emit('event', data)
+
+    def send_log(self, data):
+        emit('log', data)
 
 
 deploy_namespace = DeployNamespace(namespace=config.SOCKET_DEPLOY_NAMESPACE)

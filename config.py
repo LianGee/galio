@@ -20,7 +20,7 @@ JSON_AS_ASCII = False
 DEBUG = False
 ADDRESS = '0.0.0.0'
 PORT = 8010
-WORKERS = 1
+WORKERS = 4
 FLASK_USE_RELOAD = True if env_util.is_dev() else False
 BASE_DIR = os.path.abspath(os.getcwd())
 

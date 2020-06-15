@@ -55,7 +55,7 @@ class BuildService:
     def gen_docker_file(self):
         self.log('generate dockerfile begin')
         template = TemplateService.get_template_by_id(self.project.docker_template_id)
-        docker_template = Template(template.get('content'))
+        docker_template = Template(template.content)
         dockerfile = docker_template.render(
             project=self.project, template=template
         )
@@ -146,6 +146,7 @@ class BuildService:
             self.status = 1
         except Exception as e:
             self.status = 2
+            log.exception(e)
         finally:
             if self.log_file:
                 self.log_file.close()

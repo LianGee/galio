@@ -126,12 +126,6 @@ class K8sService:
             send_log
     ):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        send_log(api_instance.read_namespaced_pod_log(
-            name=name,
-            namespace=namespace,
-            tail_lines=tail_lines,
-            previous=previous
-        ))
         w = watch.Watch()
         stream = w.stream(
             api_instance.read_namespaced_pod_log,

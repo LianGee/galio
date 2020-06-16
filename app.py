@@ -90,7 +90,6 @@ if __name__ == '__main__':
     socketio.run(
         app,
         use_reloader=config.FLASK_USE_RELOAD,
-        debug=config.DEBUG,
         host='0.0.0.0',
         port=config.PORT,
         log_output=False

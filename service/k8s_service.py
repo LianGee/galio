@@ -5,6 +5,7 @@
 # @Date  : 2020-04-17
 # @Desc  :
 import json
+import time
 
 import kubernetes
 from kubernetes import watch
@@ -135,7 +136,10 @@ class K8sService:
             previous=previous,
             follow=True,
         )
+        count = 0
         for evnet in stream:
+            count += 1
+            print(count)
             send_log(evnet)
             if not trace:
                 w.stop()

@@ -47,40 +47,21 @@ def after_run_begin():
          "Will override the address and port values.")
 def runserver(debug, no_reload, address, port, workers, socket):
     """Starts a Faraday web server."""
-    debug = debug or config.DEBUG
-    if debug:
-        print(Fore.BLUE + '-=' * 20)
-        print(
-            Fore.YELLOW + "Starting Zed server in " +
-            Fore.RED + "DEBUG" +
-            Fore.YELLOW + " mode ENV: " +
-            Fore.RED + config.ENV
-        )
-        print(Fore.BLUE + '-=' * 20)
-        print(Style.RESET_ALL)
-        cmd = (
-            "python3 app.py"
-        )
-        print(Fore.GREEN + "Starting server with command: ")
-        print(Fore.YELLOW + cmd)
-        print(Style.RESET_ALL)
-        Popen(cmd, shell=True).wait()
-    else:
-        addr_str = " unix:{socket} " if socket else " {address}:{port} "
-        cmd = (
-                "gunicorn "
-                "-w {workers} "
-                "-b " + addr_str +
-                "--limit-request-line 0 "
-                "--limit-request-field_size 0 "
-                "--pid pid.log "
-                "-k geventwebsocket.gunicorn.workers.GeventWebSocketWorker "
-                "--timeout 120 "
-                "app:app").format(**locals())
-        print(Fore.GREEN + "Starting server with command: ")
-        print(Fore.YELLOW + cmd)
-        print(Style.RESET_ALL)
-        Popen(cmd, shell=True).wait()
+    addr_str = " unix:{socket} " if socket else " {address}:{port} "
+    cmd = (
+            "gunicorn "
+            "-w {workers} "
+            "-b " + addr_str +
+            "--limit-request-line 0 "
+            "--limit-request-field_size 0 "
+            "--pid pid.log "
+            "-k geventwebsocket.gunicorn.workers.GeventWebSocketWorker "
+            "--timeout 120 "
+            "app:app").format(**locals())
+    print(Fore.GREEN + "Starting server with command: ")
+    print(Fore.YELLOW + cmd)
+    print(Style.RESET_ALL)
+    Popen(cmd, shell=True).wait()
 
 
 if __name__ == "__main__":

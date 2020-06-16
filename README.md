@@ -7,3 +7,6 @@
 1. 构建
 2. 发布
 3. 数据库查询
+
+## 项目配置
+![project](/docs/image/project.jpg)

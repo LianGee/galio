@@ -28,32 +28,3 @@ def start():
 @log_this
 def restart():
     pass
-
-
-@deploy_bp.route('/log', methods=['POST'])
-@login_required
-@log_this
-def get_log():
-    namespace = request.json.get('namespace')
-    name = request.json.get('name')
-    previous = request.json.get('previous')
-    return Response.success(data=DeployService.read_namespaced_pod_log(
-        name=name,
-        namespace=namespace,
-        previous=previous
-    ))
-
-
-@deploy_bp.route('/read/namespaced/pod/status')
-@login_required
-def read_namespaced_pod_status():
-    project_id = request.args.get('project_id')
-    return Response.success(data=DeployService.list_pod_status(project_id))
-
-
-# todo 增加image
-# todo pod status 通过labelselector 筛选 app=akalid, release=cannary
-# todo 增加发布的env配置
-# todo 增加重启
-# todo deploy 日志
-# todo 日志收集

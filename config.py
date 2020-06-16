@@ -14,15 +14,15 @@ from common.config_util import ConfigUtil
 
 APP_NAME = 'galio'
 SECRET_KEY = 'XKCWJC6KN99GRZPOYDJTALF45WG3RNQ9'
+ENV = env_util.get_env()
 JSONIFY_PRETTYPRINT_REGULAR = True
 JSON_AS_ASCII = False
-DEBUG = True
+DEBUG = False
 ADDRESS = '0.0.0.0'
 PORT = 8010
-WORKERS = 1
-FLASK_USE_RELOAD = True
+WORKERS = 4
+FLASK_USE_RELOAD = True if env_util.is_dev() else False
 BASE_DIR = os.path.abspath(os.getcwd())
-ENV = env_util.get_env()
 
 # server config
 DEFAULT_DATABASE_URL = ConfigUtil.get_str_property('DEFAULT_DATABASE_URL')

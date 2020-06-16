@@ -43,7 +43,7 @@ def after_run_begin():
 @manager.option(
     '-s', '--socket', default=None,
     help="Path to a UNIX socket as an alternative to address:port, e.g. "
-         "/var/run/zed.sock. "
+         "/var/run/galio.sock. "
          "Will override the address and port values.")
 def runserver(debug, no_reload, address, port, workers, socket):
     """Starts a Faraday web server."""
@@ -58,12 +58,13 @@ def runserver(debug, no_reload, address, port, workers, socket):
         )
         print(Fore.BLUE + '-=' * 20)
         print(Style.RESET_ALL)
-        app.run(
-            host='0.0.0.0',
-            port=int(port),
-            threaded=True,
-            debug=True,
-            use_reloader=no_reload)
+        cmd = (
+            "python3 app.py"
+        )
+        print(Fore.GREEN + "Starting server with command: ")
+        print(Fore.YELLOW + cmd)
+        print(Style.RESET_ALL)
+        Popen(cmd, shell=True).wait()
     else:
         addr_str = " unix:{socket} " if socket else " {address}:{port} "
         cmd = (
@@ -73,7 +74,7 @@ def runserver(debug, no_reload, address, port, workers, socket):
                 "--limit-request-line 0 "
                 "--limit-request-field_size 0 "
                 "--pid pid.log "
-                "-k flask_sockets.worker "
+                "-k geventwebsocket.gunicorn.workers.GeventWebSocketWorker "
                 "--timeout 120 "
                 "app:app").format(**locals())
         print(Fore.GREEN + "Starting server with command: ")

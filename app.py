@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 
 import config
+from common import env_util
 from service.deploy_namespace import deploy_namespace
 from service.build_namespace import build_namespace
 from common.logger import Logger
@@ -27,7 +28,8 @@ app.config.from_object(config)
 CORS(app, supports_credentials=True)
 socketio = SocketIO(
     app,
-    engineio_logger=log.logger,
+    # engineio_logger=log.logger if env_util.is_dev() else False,
+    engineio_logger=False,
     logger=False,
     cors_allowed_origins='*',
 )

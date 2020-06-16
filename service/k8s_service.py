@@ -132,17 +132,18 @@ class K8sService:
             api_instance.read_namespaced_pod_log,
             name=name,
             namespace=namespace,
-            tail_lines=tail_lines,
             previous=previous,
             follow=True,
+            since_seconds=3600 * 12,
+            tail_lines=tail_lines
         )
-        count = 0
-        for evnet in stream:
-            count += 1
-            print(count)
-            send_log(evnet)
-            if not trace:
-                w.stop()
+        try:
+            for evnet in stream:
+                send_log(evnet)
+                if not trace:
+                    w.stop()
+        except Exception as e:
+            send_log(json.loads(e.body).get('message'))
 
     @classmethod
     def create_namespace(cls, name, namespace):

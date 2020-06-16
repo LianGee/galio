@@ -92,5 +92,6 @@ if __name__ == '__main__':
         use_reloader=config.FLASK_USE_RELOAD,
         host='0.0.0.0',
         port=config.PORT,
+        debug=True,
         log_output=False
     )

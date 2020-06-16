@@ -7,3 +7,21 @@
 1. 构建
 2. 发布
 3. 数据库查询
+
+### 项目配置
+![项目](https://github.com/LianGee/galio/blob/dev/docs/img/project.jpg)
+
+### 模板配置
+![模板配置](https://github.com/LianGee/galio/blob/dev/docs/img/template.jpg)
+
+### 构建
+![构建](https://github.com/LianGee/galio/blob/dev/docs/img/build.jpg)
+
+### 发布
+![发布](https://github.com/LianGee/galio/blob/dev/docs/img/deploy.jpg)
+
+### 日志
+![日志](https://github.com/LianGee/galio/blob/dev/docs/img/log.jpg)
+
+### sql查询
+![sql查询](https://github.com/LianGee/galio/blob/dev/docs/img/sql.jpg)

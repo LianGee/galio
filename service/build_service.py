@@ -43,14 +43,14 @@ class BuildService:
     def gen_nginx_conf(self):
         self.log('generate nginx file begin')
         template = TemplateService.get_template_by_id(self.project.nginx_template_id)
-        nginx_template = Template(template.get('content'))
-        log.info(template.get('content'))
+        nginx_template = Template(template.content)
+        log.info(template.content)
         nginx_conf = nginx_template.render(project=self.project.to_dict())
         self.log(nginx_conf)
-        with open(f"{self.target}/lib/{template.get('name')}", 'w', encoding='utf-8') as f:
+        with open(f"{self.target}/lib/{template.name}", 'w', encoding='utf-8') as f:
             f.write(nginx_conf)
         self.log('generate dockerfile success')
-        return f"{self.target}/lib/{template.get('name')}"
+        return f"{self.target}/lib/{template.name}"
 
     def gen_docker_file(self):
         self.log('generate dockerfile begin')
@@ -144,13 +144,16 @@ class BuildService:
             else:
                 raise ServerException(msg=f'unknown build type {self.project.build_type}')
             self.status = 1
+            self.build_log.reason = '恭喜，构建成功!'
         except Exception as e:
             self.status = 2
+            self.build_log.reason = e.__str__()
             log.exception(e)
         finally:
             if self.log_file:
                 self.log_file.close()
             self.log_build()
+            emit('done', self.build_log.to_dict())
 
     def before_build(self):
         self.build_log = BuildLog(
@@ -188,7 +191,6 @@ class BuildService:
     def log_build(self):
         self.build_log.status = self.status
         self.build_log.update()
-        emit('build_event', self.build_log.to_dict())
 
     def log(self, message):
         self.console(message)

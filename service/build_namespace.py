@@ -10,8 +10,11 @@ from flask_socketio import Namespace, emit
 
 import config
 from common.config_util import ConfigUtil
+from common.logger import Logger
 from model.project import Project
 from service.build_service import BuildService
+
+log = Logger(__name__)
 
 
 class BuildNamespace(Namespace):
@@ -20,7 +23,7 @@ class BuildNamespace(Namespace):
         super(BuildNamespace, self).__init__(namespace=namespace)
 
     def on_connect(self):
-        self.console('connect')
+        log.info('connect')
 
     def console(self, message):
         emit('console', f"[{datetime.now().strftime('%y-%m-%d %H:%M:%S')}]-{message}")

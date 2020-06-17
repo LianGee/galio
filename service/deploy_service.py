@@ -5,6 +5,7 @@
 # @Date  : 2020-04-10
 # @Desc  :
 import json
+import time
 
 import yaml
 from jinja2 import Template
@@ -107,3 +108,12 @@ class DeployService:
     def list_project_event(cls, project_id, send_event):
         label_selector, project = cls.get_label_selector(project_id)
         K8sService.get_namespace_event(project.namespace, send_event)
+
+    @classmethod
+    def download_log(cls, name, namespace, tail_lines):
+        file_name = f'{namespace}-{name}-{time.time()}.log'
+        return file_name, K8sService.download_pod_log(
+            name=name,
+            namespace=namespace,
+            tail_lines=tail_lines
+        )

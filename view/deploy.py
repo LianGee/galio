@@ -4,7 +4,9 @@
 # @Author: zaoshu
 # @Date  : 2020-04-19
 # @Desc  :
-from flask import Blueprint, g, request
+import mimetypes
+
+from flask import Blueprint, g, request, make_response
 
 from common.log import log_this
 from common.login import login_required
@@ -28,3 +30,15 @@ def start():
 @log_this
 def restart():
     pass
+
+
+@deploy_bp.route('/download/log', methods=['GET'])
+@login_required
+@log_this
+def download_log():
+    file_name, content = DeployService.download_log(**request.args.to_dict())
+    response = make_response(content)
+    mime_type = mimetypes.guess_type(file_name)[0]
+    response.headers['Content-Type'] = mime_type
+    response.headers['Content-Disposition'] = 'attachment; filename={}'.format(file_name.encode().decode('latin-1'))
+    return response

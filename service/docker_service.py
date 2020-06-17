@@ -78,7 +78,7 @@ class DockerService:
     def build(cls, path, dockerfile, tag, console):
         build_log = []
         try:
-            console('构建镜像中，请耐心等待')
+            console('构建镜像中，请耐心等待...')
             response = cls.client.images.build(
                 path=path,
                 tag=tag,

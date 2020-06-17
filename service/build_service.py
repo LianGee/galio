@@ -144,11 +144,11 @@ class BuildService:
             else:
                 raise ServerException(msg=f'unknown build type {self.project.build_type}')
             self.status = 1
-            self.build_log.reason = '恭喜，构建成功!'
+            self.log('恭喜，构建成功!')
         except Exception as e:
             self.status = 2
             self.build_log.reason = e.__str__()
-            log.exception(e)
+            self.log(f'{self.build_log.uuid}构建失败:{e.__str__()}')
         finally:
             if self.log_file:
                 self.log_file.close()
@@ -213,6 +213,7 @@ class BuildService:
     # todo 启用定时任务，每个项目保留20次构建
     @classmethod
     def clean_log(cls):
+        log.info('开始清理build log记录')
         logs = BuildLog.select().order_by(BuildLog.created_at.desc()).all()
         project_record_map = {}
         for _log in logs:
@@ -226,3 +227,4 @@ class BuildService:
         delete_logs = BuildLog.select().filter(BuildLog.id.notin_(not_delete_id))
         for delete_log in delete_logs:
             delete_log.delete()
+        log.info('build log清理完毕')

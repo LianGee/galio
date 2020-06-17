@@ -57,7 +57,7 @@ class BuildService:
         template = TemplateService.get_template_by_id(self.project.docker_template_id)
         docker_template = Template(template.content)
         dockerfile = docker_template.render(
-            project=self.project, template=template
+            project=self.project.to_dict(), template=template.to_dict()
         )
         self.log(dockerfile)
         with open(f'{self.target}/src/dockerfile', 'w', encoding='utf-8') as f:

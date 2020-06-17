@@ -4,6 +4,9 @@
 # @Author: zaoshu
 # @Date  : 2020-04-13
 # @Desc  :
+import jinja2
+
+from model.project import Project
 from model.template import Template
 
 
@@ -36,3 +39,11 @@ class TemplateService:
         template = Template.select().get(template_id)
         template.delete()
         return True
+
+    @classmethod
+    def preview_template(cls, content, project_id):
+        template = jinja2.Template(content)
+        project = Project.select().get(project_id)
+        return template.render(
+            project=project.to_dict()
+        )

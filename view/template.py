@@ -46,3 +46,10 @@ def save_template():
 def delete_template():
     template_id = request.args.get('template_id')
     return Response.success(TemplateService.delete_template(template_id))
+
+
+@template_bp.route('/preview', methods=['POST'])
+@login_required
+@log_this
+def preview_template():
+    return Response.success(TemplateService.preview_template(**request.json))

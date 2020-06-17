@@ -5,7 +5,6 @@
 # @Date  : 2020-04-17
 # @Desc  :
 import json
-import time
 
 import kubernetes
 from kubernetes import watch
@@ -144,6 +143,15 @@ class K8sService:
                     w.stop()
         except Exception as e:
             send_log(json.loads(e.body).get('message'))
+
+    @classmethod
+    def download_pod_log(cls, name, namespace, tail_lines):
+        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
+        return api_instance.read_namespaced_pod_log(
+            name=name,
+            namespace=namespace,
+            tail_lines=min(int(tail_lines), 100000)
+        )
 
     @classmethod
     def create_namespace(cls, name, namespace):

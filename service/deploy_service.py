@@ -5,6 +5,7 @@
 # @Date  : 2020-04-10
 # @Desc  :
 import json
+import time
 
 import yaml
 from jinja2 import Template
@@ -40,7 +41,7 @@ class DeployService:
             deploy_log.status = DeployStatus.NAMESPACE
             template = TemplateService.get_template_by_id(project.deployment_template_id)
             deploy_template = Template(template.content)
-            deploy_template_yaml = yaml.safe_load(deploy_template.render(project=project, image_name=image_name))
+            deploy_template_yaml = yaml.safe_load(deploy_template.render(project=project.to_dict(), image_name=image_name))
             log.info(f'{deploy_log.uuid}:发布镜像{json.dumps(deploy_template_yaml, indent=2)}')
             deployment_response = K8sService.create_namespaced_deployment(
                 name=project.name,
@@ -52,7 +53,7 @@ class DeployService:
             # 创建service
             template = TemplateService.get_template_by_id(project.svc_template_id)
             service_template = Template(template.content)
-            service_template_yaml = yaml.safe_load(service_template.render(project=project))
+            service_template_yaml = yaml.safe_load(service_template.render(project=project.to_dict()))
             log.info(f'{deploy_log.uuid}:发布service {json.dumps(service_template_yaml, indent=2)}')
             service_response = K8sService.create_namespaced_service(
                 namespace=project.name,
@@ -64,7 +65,7 @@ class DeployService:
             # 创建ingress
             template = TemplateService.get_template_by_id(project.ingress_template_id)
             ingress_template = Template(template.content)
-            ingress_template_yaml = yaml.safe_load(ingress_template.render(project=project))
+            ingress_template_yaml = yaml.safe_load(ingress_template.render(project=project.to_dict()))
             # ingress service 删除发布会造成不可访问，需要探索修改
             log.info(f'{deploy_log.uuid}:发布ingress {json.dumps(ingress_template_yaml, indent=2)}')
             ingress_response = K8sService.create_namespaced_ingress(
@@ -107,3 +108,12 @@ class DeployService:
     def list_project_event(cls, project_id, send_event):
         label_selector, project = cls.get_label_selector(project_id)
         K8sService.get_namespace_event(project.namespace, send_event)
+
+    @classmethod
+    def download_log(cls, name, namespace, tail_lines):
+        file_name = f'{namespace}-{name}-{time.time()}.log'
+        return file_name, K8sService.download_pod_log(
+            name=name,
+            namespace=namespace,
+            tail_lines=tail_lines
+        )

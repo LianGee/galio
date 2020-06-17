@@ -43,14 +43,14 @@ class BuildService:
     def gen_nginx_conf(self):
         self.log('generate nginx file begin')
         template = TemplateService.get_template_by_id(self.project.nginx_template_id)
-        nginx_template = Template(template.get('content'))
-        log.info(template.get('content'))
+        nginx_template = Template(template.content)
+        log.info(template.content)
         nginx_conf = nginx_template.render(project=self.project.to_dict())
         self.log(nginx_conf)
-        with open(f"{self.target}/lib/{template.get('name')}", 'w', encoding='utf-8') as f:
+        with open(f"{self.target}/lib/{template.name}", 'w', encoding='utf-8') as f:
             f.write(nginx_conf)
         self.log('generate dockerfile success')
-        return f"{self.target}/lib/{template.get('name')}"
+        return f"{self.target}/lib/{template.name}"
 
     def gen_docker_file(self):
         self.log('generate dockerfile begin')

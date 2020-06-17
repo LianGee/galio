@@ -7,6 +7,7 @@
 
 import docker
 
+from common.exception import ServerException
 from common.logger import Logger
 from model.project import Project
 
@@ -88,11 +89,9 @@ class DockerService:
             build_log = response[1]
         except Exception as e:
             build_log = e.build_log if hasattr(e, 'build_log') else []
-            console('很遗憾，构建镜像失败')
             raise e
         finally:
             for info in build_log:
                 i = info.get('stream', '').strip()
                 if len(i) > 0:
                     console(i)
-            console('恭喜，构建成功！')

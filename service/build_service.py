@@ -144,13 +144,16 @@ class BuildService:
             else:
                 raise ServerException(msg=f'unknown build type {self.project.build_type}')
             self.status = 1
+            self.build_log.reason = '恭喜，构建成功!'
         except Exception as e:
             self.status = 2
+            self.build_log.reason = e.__str__()
             log.exception(e)
         finally:
             if self.log_file:
                 self.log_file.close()
             self.log_build()
+            emit('done', self.build_log.to_dict())
 
     def before_build(self):
         self.build_log = BuildLog(
@@ -188,7 +191,6 @@ class BuildService:
     def log_build(self):
         self.build_log.status = self.status
         self.build_log.update()
-        emit('build_event', self.build_log.to_dict())
 
     def log(self, message):
         self.console(message)

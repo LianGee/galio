@@ -10,7 +10,6 @@ from flask_socketio import Namespace, emit
 
 import config
 from common.config_util import ConfigUtil
-from model.build_log import BuildLog
 from model.project import Project
 from service.build_service import BuildService
 
@@ -23,11 +22,8 @@ class BuildNamespace(Namespace):
     def on_connect(self):
         self.console('connect')
 
-    def on_build_ping(self, message):
-        build_log = BuildLog.select().filter(
-            BuildLog.user_name == message.get('name')
-        ).order_by(BuildLog.created_at.desc()).first()
-        emit('build_pong', build_log.to_dict())
+    def console(self, message):
+        emit('console', f"[{datetime.now().strftime('%y-%m-%d %H:%M:%S')}]-{message}")
 
     def on_build(self, message):
         project_id = message.get('project_id')
@@ -41,9 +37,6 @@ class BuildNamespace(Namespace):
             console=self.console
         )
         build_service.build()
-
-    def console(self, message):
-        emit('console', f"[{datetime.now().strftime('%y-%m-%d %H:%M:%S')}]-{message}")
 
 
 build_namespace = BuildNamespace(namespace=config.SOCKET_BUILD_NAMESPACE)

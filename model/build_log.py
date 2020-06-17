@@ -23,3 +23,4 @@ class BuildLog(Model, BaseModel):
     description = Column(Text)
     status = Column(Integer, default=0)
     log_path = Column(String, default='')
+    reason = Column(Text)

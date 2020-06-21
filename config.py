@@ -47,7 +47,7 @@ CAS_URL = 'cas.url'
 FRONT_URL = 'front.url'
 SERVER_URL = 'server.url'
 
-# workspace
+# code_path
 GIT_WORKSPACE = 'git.workspace'
 
 # query max size

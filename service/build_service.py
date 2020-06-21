@@ -8,147 +8,66 @@ import os
 from datetime import datetime
 
 from flask_socketio import emit
-from jinja2 import Template
 
-from common.cmd_util import CmdUtil
-from common.constant import BuildType
 from common.exception import ServerException
 from common.logger import Logger
 from model.build_log import BuildLog
 from model.project import Project
 from service.docker_service import DockerService
 from service.git_service import GitService
-from service.template_service import TemplateService
+from service.package_service import PackageService
 
 log = Logger(__name__)
 
 
 class BuildService:
-    def __init__(self, workspace, project: Project, branch, description=None, user=None, console=log.info):
+    def __init__(self, workspace, project: Project, branch, description=None, user=None):
         self.workspace = workspace
         self.project = project
         self.branch = branch
-        self.console = console
         self.user = user
         self.status = 0
         self.description = description if description else f"{branch}/{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         self.image_name = f'{project.name}:{branch}'
-        self.target = os.path.join(self.workspace, f'target/{self.project.name}')
-        self.code_path = f'{self.workspace}/project/{self.project.name}'
-        self.log_dir = os.path.join(self.workspace, f'log/{self.project.name}')
-        self.log_path = f"{self.log_dir}/{int(datetime.now().timestamp())}.log"
+        self.code_path = f'{self.workspace}/project/{project.name}'
+        self.target_path = f'{self.workspace}/target/{project.name}'
+        self.log_path = f"{self.workspace}/log/{self.project.name}/{int(datetime.now().timestamp())}.log"
         self.log_file = None
         self.build_log = None
 
-    def gen_nginx_conf(self):
-        self.log('generate nginx file begin')
-        template = TemplateService.get_template_by_id(self.project.nginx_template_id)
-        nginx_template = Template(template.content)
-        log.info(template.content)
-        nginx_conf = nginx_template.render(project=self.project.to_dict())
-        self.log(nginx_conf)
-        with open(f"{self.target}/lib/{template.name}", 'w', encoding='utf-8') as f:
-            f.write(nginx_conf)
-        self.log('generate dockerfile success')
-        return f"{self.target}/lib/{template.name}"
-
-    def gen_docker_file(self):
-        self.log('generate dockerfile begin')
-        template = TemplateService.get_template_by_id(self.project.docker_template_id)
-        docker_template = Template(template.content)
-        dockerfile = docker_template.render(
-            project=self.project.to_dict(), template=template.to_dict()
-        )
-        self.log(dockerfile)
-        with open(f'{self.target}/src/dockerfile', 'w', encoding='utf-8') as f:
-            f.write(dockerfile)
-        self.log('generate dockerfile success')
-        return f'{self.target}/src/dockerfile'
-
-    def package(self):
-        pass
-
-    def clean(self):
-        self.log('clean target begin')
-        if os.path.exists(self.target):
-            cmd = f'rm -rf {self.target}/lib/*'
-            CmdUtil.run(cmd, console=self.log)
-        self.log('clean target end')
-
-    def package_python(self):
-        self.log('package source code begin')
-        self.clean()
-        cmd = f'cd {self.code_path} && tar czvf {self.project.name}.tar ./'
-        CmdUtil.run(cmd, console=self.log)
-        cmd = f'mv {self.code_path}/{self.project.name}.tar {self.target}/lib'
-        CmdUtil.run(cmd, console=self.log)
-        self.log('package source code success')
-
-    def npm_build(self):
-        if not os.path.exists(f'{self.code_path}/dist'):
-            self.package_dist()
-        self.gen_nginx_conf()
-        dockerfile = self.gen_docker_file()
-        DockerService.build(
-            path=f'{self.target}/lib',
-            dockerfile=dockerfile,
-            tag=f'{self.project.name}:{self.branch}',
-            console=self.log
-        )
-
-    def tar_build(self):
-        dockerfile = self.gen_docker_file()
-        self.package_python()
-        DockerService.build(
-            path=f'{self.target}/lib',
-            dockerfile=dockerfile,
-            tag=f'{self.project.name}:{self.branch}',
-            console=self.log
-        )
-
-    def mvn_build(self):
-        pass
-
-    def gradle_build(self):
-        pass
-
-    def user_define_build(self):
-        pass
-
-    def package_dist(self):
-        self.log('package source code begin')
-        self.clean()
-        cmd = f'cd {self.code_path} && npm install'
-        CmdUtil.run(cmd, console=self.log)
-        cmd = f'cd {self.code_path} && npm run build'
-        CmdUtil.run(cmd, console=self.log)
-        cmd = f'cd {self.code_path} && tar czvf {self.project.name}.tar ./dist'
-        CmdUtil.run(cmd, console=self.log)
-        cmd = f'mv {self.code_path}/{self.project.name}.tar {self.target}/lib'
-        CmdUtil.run(cmd, console=self.log)
-        self.log('package source code success')
-
     def build(self):
         self.before_build()
+        self.console(f'代码目录{self.code_path}')
+        self.console(f'目标目录{self.target_path}')
+        self.console(f'日志目录{self.log_path}')
+        git_service = GitService(
+            code_path=self.code_path,
+            project=self.project,
+            branch=self.branch,
+            console=self.console
+        )
+        package_service = PackageService(
+            project=self.project,
+            console=self.console,
+            code_path=self.code_path,
+            target_path=self.target_path
+        )
         try:
-            if self.project.build_type == BuildType.NPM:
-                self.npm_build()
-            elif self.project.build_type == BuildType.TAR:
-                self.tar_build()
-            elif self.project.build_type == BuildType.MVN:
-                self.mvn_build()
-            elif self.project.build_type == BuildType.GRADLE:
-                self.gradle_build()
-            elif self.project.build_type == BuildType.USER_DEFINE:
-                self.user_define_build()
-            else:
-                raise ServerException(msg=f'unknown build type {self.project.build_type}')
+            git_service.pull_project()
+            package_service.package_project()
+            DockerService.build(
+                self.target_path,
+                tag=self.image_name,
+                console=self.console,
+                dockerfile='dockerfile',
+            )
             self.status = 1
-            self.log('恭喜，构建成功!')
+            self.console('恭喜，构建成功!')
         except Exception as e:
+            log.exception(e)
             self.status = 2
             self.build_log.reason = e.__str__()
-            self.log(f'{self.build_log.uuid}构建失败:{e.__str__()}')
+            self.console(f'{self.build_log.uuid}构建失败:{e.__str__()}')
         finally:
             if self.log_file:
                 self.log_file.close()
@@ -156,6 +75,12 @@ class BuildService:
             emit('done', self.build_log.to_dict())
 
     def before_build(self):
+        if not os.path.exists(self.code_path):
+            os.makedirs(self.code_path)
+        if not os.path.exists(self.target_path):
+            os.makedirs(self.target_path)
+        if not os.path.exists(f'{self.workspace}/log/{self.project.name}'):
+            os.makedirs(f'{self.workspace}/log/{self.project.name}')
         self.build_log = BuildLog(
             project_name=self.project.name,
             branch=self.branch,
@@ -166,36 +91,18 @@ class BuildService:
             log_path=self.log_path,
         )
         self.build_log.insert()
-        if not os.path.exists(self.log_dir):
-            os.makedirs(self.log_dir, exist_ok=True)
-        if not os.path.exists(self.target):
-            os.makedirs(self.target)
-            os.makedirs(f'{self.target}/lib', exist_ok=True)
-            os.makedirs(f'{self.target}/src', exist_ok=True)
         self.log_file = open(self.log_path, 'w+')
-        git_service = GitService(
-            workspace=f'{self.workspace}/project',
-            project=self.project,
-            branch=self.branch
-        )
-        self.log('初始化仓库')
-        git_service.init()
-        self.log('拉取master')
-        git_service.pull()
-        self.log('切换分支')
-        git_service.check_out_branch()
-        self.log('拉取分支代码')
-        git_service.pull()
-        self.log(f'代码拉取完毕: {self.code_path}')
 
     def log_build(self):
         self.build_log.status = self.status
         self.build_log.update()
 
-    def log(self, message):
-        self.console(message)
+    def console(self, message):
+        msg = f"[{datetime.now().strftime('%y-%m-%d %H:%M:%S')}]-{message}"
+        log.info(msg)
+        emit('console', msg)
         if hasattr(self.log_file, 'write'):
-            self.log_file.write(f"[{datetime.now().strftime('%y-%m-%d %H:%M:%S')}]-{message}\n")
+            self.log_file.write(f'{msg}\n')
 
     @classmethod
     def get_logs(cls, user_name):

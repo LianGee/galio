@@ -11,25 +11,22 @@ from git import Repo
 
 class GitService:
 
-    def __init__(self, workspace, project, branch='master', console=print):
-        self.workspace = workspace
+    def __init__(self, code_path, project, branch='master', console=print):
+        self.code_path = code_path
         self.project = project
         self.branch = branch
         self.repo: Repo = None
-        self.dir = None
         self.console = console
 
     def init(self):
-        dir = os.path.join(self.workspace, f'{self.project.name}')
-        if os.path.exists(dir):
-            repo = Repo(dir)
+        if os.path.exists(self.code_path):
+            repo = Repo(self.code_path)
         else:
-            repo = Repo.init(dir)
+            repo = Repo.init(self.code_path)
         if len(repo.remotes) != 0 and repo.remote('origin').exists():
             repo.delete_remote(repo.remote('origin'))
         repo.create_remote(name='origin', url=self.project.git)
         assert repo.remote().exists()
-        self.dir = dir
         self.repo = repo
 
     def pull(self):
@@ -41,3 +38,11 @@ class GitService:
 
     def check_out_branch(self):
         self.repo.git.checkout(self.branch)
+
+    def pull_project(self):
+        self.console('初始化仓库')
+        self.init()
+        self.console(f'切换到{self.branch}分支')
+        self.check_out_branch()
+        self.console('拉取代码')
+        self.pull()

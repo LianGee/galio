@@ -7,7 +7,6 @@
 
 import docker
 
-from common.exception import ServerException
 from common.logger import Logger
 from model.project import Project
 
@@ -57,41 +56,25 @@ class DockerService:
                 cls.client.images.remove(image.id, True, False)
         log.info('镜像清理完毕')
 
-    # def clean_container(self):
-    #     self.log('清理镜像')
-    #     cmd = 'docker rmi $(docker images -f "dangling=true" -q)'
-    #     CmdUtil.run(cmd, console=self.log, t=False)
-    #     cmd = "docker rmi $(docker images | grep \"None\" | awk '{print $3}')"
-    #     CmdUtil.run(cmd, console=self.log, t=False)
-    #     self.log('清理容器')
-    #     cmd = "docker stop $(docker ps -a | grep \"Exited\" | awk '{print $1 }')"
-    #     CmdUtil.run(cmd, console=self.log, t=False)
-    #     cmd = "docker rm $(docker ps -a | grep \"Exited\" | awk '{print $1 }')"
-    #     CmdUtil.run(cmd, console=self.log, t=False)
-    #     CmdUtil.run('docker images', console=self.log)
-
     @classmethod
-    def test(cls):
-        pass
-
-    @classmethod
-    def build(cls, path, dockerfile, tag, console):
-        build_log = []
+    def build(cls, path, tag, console, dockerfile):
+        build_logs = []
         try:
             console('构建镜像中，请耐心等待...')
-            response = cls.client.images.build(
+            build_logs = cls.client.api.build(
                 path=path,
                 tag=tag,
                 nocache=False,
                 rm=True,
-                dockerfile=dockerfile
+                forcerm=True,
+                dockerfile=dockerfile,
+                decode=True,
             )
-            build_log = response[1]
         except Exception as e:
-            build_log = e.build_log if hasattr(e, 'build_log') else []
+            console(e.__str__())
             raise e
         finally:
-            for info in build_log:
-                i = info.get('stream', '').strip()
-                if len(i) > 0:
-                    console(i)
+            for build_log in build_logs:
+                info = build_log.get('stream', '').strip()
+                if len(info) > 0:
+                    console(info)

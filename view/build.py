@@ -25,7 +25,7 @@ build_bp = Blueprint('build', __name__)
 def branches():
     project = Project.select().get(request.args.get('project_id'))
     git_service = GitService(
-        workspace=f'{ConfigUtil.get_str_property(config.GIT_WORKSPACE)}/project',
+        code_path=f'{ConfigUtil.get_str_property(config.GIT_WORKSPACE)}/project/{project.name}',
         project=project
     )
     git_service.init()

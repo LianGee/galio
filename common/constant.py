@@ -30,3 +30,10 @@ class DeployStatus:
     DEPLOYMENT = 2
     SERVICE = 3
     INGRESS = 4
+
+
+class ProgressType:
+    WAIT = 'wait'
+    PROGRESS = 'process'
+    FINISH = 'finish'
+    ERROR = 'error'

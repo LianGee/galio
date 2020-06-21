@@ -25,9 +25,6 @@ class BuildNamespace(Namespace):
     def on_connect(self):
         log.info('connect')
 
-    def console(self, message):
-        emit('console', f"[{datetime.now().strftime('%y-%m-%d %H:%M:%S')}]-{message}")
-
     def on_build(self, message):
         project_id = message.get('project_id')
         branch = message.get('branch')
@@ -37,7 +34,6 @@ class BuildNamespace(Namespace):
             project=project,
             branch=branch,
             user=message.get('user'),
-            console=self.console
         )
         build_service.build()
 

@@ -69,7 +69,7 @@ class PackageService:
             self.console(self.gen_nginx_conf())
         self.console(f'生成dockerfile')
         self.console(self.gen_docker_file())
-        self.console(f'{self.project.name}完成')
+        self.console(f'{self.project.name}打包完成')
 
     '''
         将源代码打包成dist放在target目录下

@@ -98,8 +98,12 @@ class PackageService:
             if '.git' in root:
                 continue
             for file in files:
+                if sub_path is None:
+                    arcname = os.path.join(root.replace(src_path, './'), file)
+                else:
+                    arcname = os.path.join(root.replace(src_path, f'./{sub_path}'), file)
                 t.add(
                     os.path.join(root, file),
-                    arcname=os.path.join(root.replace(src_path, './'), file)
+                    arcname=arcname
                 )
         t.close()

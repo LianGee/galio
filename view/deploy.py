@@ -25,13 +25,6 @@ def start():
     return Response.success(data=DeployService.deploy(g.user, project_id, image_name))
 
 
-@deploy_bp.route('/restart', methods=['POST'])
-@login_required
-@log_this
-def restart():
-    pass
-
-
 @deploy_bp.route('/download/log', methods=['GET'])
 @login_required
 @log_this

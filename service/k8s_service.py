@@ -110,7 +110,8 @@ class K8sService:
             api_instance.list_namespaced_event,
             namespace=namespace,
             watch=True,
-            pretty=True
+            pretty=True,
+            timeout_seconds=5,
         )
         for event in stream:
             send_event(event.get('raw_object'))

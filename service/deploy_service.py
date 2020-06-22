@@ -8,6 +8,7 @@ import json
 import time
 
 import yaml
+from flask_socketio import emit
 from jinja2 import Template
 
 from common.constant import DeployStatus
@@ -77,7 +78,9 @@ class DeployService:
             deploy_log.status = DeployStatus.INGRESS
             return True
         except Exception as e:
-            deploy_log.reason = e
+            deploy_log.reason = e.__str__()
+            log.exception(e)
+            raise e
         finally:
             deploy_log.insert()
 

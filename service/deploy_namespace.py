@@ -18,12 +18,6 @@ class DeployNamespace(Namespace):
     def __init__(self, namespace):
         super(DeployNamespace, self).__init__(namespace=namespace)
 
-    def on_connect(self):
-        self.console('connect')
-
-    def console(self, message):
-        emit('console', f"[{datetime.now().strftime('%y-%m-%d %H:%M:%S')}]-{message}")
-
     def on_replica(self, message):
         project_id = message.get('project_id')
         DeployService.list_project_replica(project_id, send_replica=self.send_replica)

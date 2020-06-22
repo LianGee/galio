@@ -9,7 +9,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from service.build_service import BuildService
 from service.docker_service import DockerService
 
-scheduler = BackgroundScheduler()
-scheduler.add_job(DockerService.clean_docker, trigger='interval', minutes=5, id='clean_docker')
-scheduler.add_job(BuildService.clean_log, trigger='interval', hours=1, id='clean_docker')
-scheduler.start()
+
+def run_schedule():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(DockerService.clean_docker, trigger='interval', minutes=5, id='clean_docker')
+    scheduler.add_job(BuildService.clean_log, trigger='interval', minutes=1, id='clean_build_log')
+    scheduler.start()

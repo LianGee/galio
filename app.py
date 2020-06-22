@@ -5,12 +5,12 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 
 import config
-from common import env_util
-from service.deploy_namespace import deploy_namespace
-from service.build_namespace import build_namespace
 from common.logger import Logger
 from common.response import Response
 from model.db import clean_db_session
+from service.build_namespace import build_namespace
+from service.deploy_namespace import deploy_namespace
+from service.scheduler import run_schedule
 from view.build import build_bp
 from view.cloud_host import cloud_host_bp
 from view.db_inst import db_inst_bp
@@ -84,6 +84,7 @@ def favicon():
 
 socketio.on_namespace(build_namespace)
 socketio.on_namespace(deploy_namespace)
+run_schedule()
 
 if __name__ == '__main__':
     socketio.init_app(app, async_mode='gevent')

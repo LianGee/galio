@@ -93,7 +93,7 @@ class PackageService:
             if '● Webpack' in line:
                 flag = False
             progress = re.findall(r'\d+%', line)
-            if '✔ Webpack' in line or (len(progress) > 0 and int(progress[0].strip('%')) % 10 == 0):
+            if '✔ Webpack' in line or (len(progress) > 0 and '0' in line):
                 flag = True
             if line.isprintable() and flag:
                 self.console(line)

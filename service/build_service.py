@@ -5,6 +5,7 @@
 # @Date  : 2020-04-10
 # @Desc  :
 import os
+import shutil
 from datetime import datetime
 
 from flask_socketio import emit
@@ -89,10 +90,11 @@ class BuildService:
             emit('done', self.build_log.to_dict())
 
     def before_build(self):
+        if os.path.exists(self.target_path):
+            shutil.rmtree(self.target_path, ignore_errors=True)
+        os.makedirs(self.target_path)
         if not os.path.exists(self.code_path):
             os.makedirs(self.code_path)
-        if not os.path.exists(self.target_path):
-            os.makedirs(self.target_path)
         if not os.path.exists(f'{self.workspace}/log/{self.project.name}'):
             os.makedirs(f'{self.workspace}/log/{self.project.name}')
         self.build_log = BuildLog(

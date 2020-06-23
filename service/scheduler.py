@@ -12,6 +12,6 @@ from service.docker_service import DockerService
 
 def run_schedule():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(DockerService.clean_docker, trigger='interval', minutes=5, id='clean_docker')
-    scheduler.add_job(BuildService.clean_log, trigger='interval', minutes=1, id='clean_build_log')
+    scheduler.add_job(DockerService.clean_docker, trigger='interval', minutes=15, id='clean_docker')
+    scheduler.add_job(BuildService.clean_log, trigger='interval', minutes=15, id='clean_build_log')
     scheduler.start()

@@ -5,7 +5,9 @@
 # @Date  : 2020-06-19
 # @Desc  :
 import os
+import re
 import tarfile
+import time
 
 from jinja2 import Template
 
@@ -14,6 +16,7 @@ from common.constant import BuildType
 from common.exception import ServerException
 from model.project import Project
 from service.template_service import TemplateService
+from pynpm import NPMPackage
 
 
 class PackageService:
@@ -73,15 +76,28 @@ class PackageService:
 
     '''
         将源代码打包成dist放在target目录下
-        如果dist目录存在则不编译
     '''
 
     def package_npm(self):
-        if not os.path.exists(f'{self.code_path}/dist'):
-            cmd = f'cd {self.code_path} && npm install'
-            CmdUtil.run(cmd, console=self.console)
-            cmd = f'cd {self.code_path} && npm run build'
-            CmdUtil.run(cmd, console=self.console)
+        pkg = NPMPackage(f'{self.code_path}/package.json')
+        self.console('正在执行npm install，请稍后...')
+        p = pkg.install(wait=False)
+        for line in iter(p.stdout.readline, b''):
+            line = line.rstrip().decode('utf8')
+            self.console(line)
+        self.console('正在执行npm build，请稍后...')
+        p = pkg.run_script('build', '--report', wait=False)
+        flag = True
+        for line in iter(p.stdout.readline, b''):
+            line = line.rstrip().decode('utf8', 'ignore')
+            if '● Webpack' in line:
+                flag = False
+            progress = re.findall(r'\d+%', line)
+            if '✔ Webpack' in line or (len(progress) > 0 and int(progress[0].strip('%')) % 10 == 0):
+                flag = True
+            if line.isprintable() and flag:
+                self.console(line)
+                time.sleep(0.05)
         self.package_tar(sub_path='dist')
 
     '''

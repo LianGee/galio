@@ -5,6 +5,7 @@
 # @Date  : 2020-04-17
 # @Desc  :
 import json
+import time
 
 import kubernetes
 from kubernetes import watch
@@ -140,6 +141,7 @@ class K8sService:
         try:
             for evnet in stream:
                 send_log(evnet)
+                time.sleep(0.05)
                 if not trace:
                     w.stop()
         except Exception as e:

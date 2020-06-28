@@ -145,6 +145,13 @@ class BuildService:
             content = f.read()
         return content
 
+    @classmethod
+    def recent_build(cls, user_name):
+        build_log = BuildLog.select().filter(
+            BuildLog.user_name == user_name
+        ).order_by(BuildLog.created_at.desc()).first()
+        return build_log
+
     # todo 启用定时任务，每个项目保留20次构建
     @classmethod
     def clean_log(cls):

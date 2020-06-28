@@ -48,6 +48,8 @@ def get_log_content():
     return Response.success(data=BuildService.get_log_content(log_path))
 
 
-@build_bp.route('/test', methods=['GET'])
-def test():
-    return Response.success(data=BuildService.clean_log())
+@build_bp.route('/recent', methods=['GET'])
+@login_required
+@log_this
+def recent_build():
+    return Response.success(data=BuildService.recent_build(g.user.name))

@@ -27,4 +27,6 @@ def list_base_image():
 @login_required
 @log_this
 def list_project_image():
-    pass
+    project_id = request.args.get('project_id')
+    assert project_id is not None
+    return Response.success(data=HarborService.list_project_image(project_id))

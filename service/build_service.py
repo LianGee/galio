@@ -33,7 +33,8 @@ class BuildService:
         self.user = user
         self.status = 0
         self.description = description if description else f"{branch}/{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        self.image_name = f'{ConfigUtil.get_str_property(key=config.HARBOR_APP_REPOSITORY)}/' \
+        self.image_name = f'{ConfigUtil.get_str_property(key=config.HARBOR_HOST)}/' \
+            f'{ConfigUtil.get_str_property(key=config.HARBOR_APP_PROJECT_NAME)}/' \
             f'{self.project.name}:{self.branch}'
         self.code_path = f'{self.workspace}/project/{project.name}'
         self.target_path = f'{self.workspace}/target/{project.name}'
@@ -69,7 +70,9 @@ class BuildService:
             self.after_progress(description='项目打包成功', percent=30)
 
             self.before_progress(description='构建镜像')
-            repository = f'{ConfigUtil.get_str_property(key=config.HARBOR_APP_REPOSITORY)}/{self.project.name}'
+            repository = f'{ConfigUtil.get_str_property(key=config.HARBOR_HOST)}/' \
+                f'{ConfigUtil.get_str_property(key=config.HARBOR_APP_PROJECT_NAME)}/' \
+                f'{self.project.name}'
             DockerService.build(
                 self.target_path,
                 tag=self.image_name,

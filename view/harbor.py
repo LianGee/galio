@@ -21,3 +21,10 @@ def list_base_image():
     page_num = request.args.get('page_num', 1)
     page_size = request.args.get('page_size', 10)
     return Response.success(data=HarborService.list_base_image(page_num, page_size))
+
+
+@harbor_bp.route('/list/project/image')
+@login_required
+@log_this
+def list_project_image():
+    pass

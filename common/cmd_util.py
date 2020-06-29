@@ -25,6 +25,6 @@ class CmdUtil:
             console(line)
         p.communicate()
         if p.returncode and t:
-            raise ServerException(msg='命令执行失败')
+            raise ServerException(msg=f'命令{cmd}执行失败')
 
 

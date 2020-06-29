@@ -10,6 +10,8 @@ from datetime import datetime
 
 from flask_socketio import emit
 
+import config
+from common.config_util import ConfigUtil
 from common.constant import ProgressType
 from common.exception import ServerException
 from common.logger import Logger
@@ -31,7 +33,9 @@ class BuildService:
         self.user = user
         self.status = 0
         self.description = description if description else f"{branch}/{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        self.image_name = f'{project.name}:{branch}'
+        self.image_name = f'{ConfigUtil.get_str_property(key=config.HARBOR_HOST)}/' \
+            f'{ConfigUtil.get_str_property(key=config.HARBOR_APP_PROJECT_NAME)}/' \
+            f'{self.project.name}:{self.branch}'
         self.code_path = f'{self.workspace}/project/{project.name}'
         self.target_path = f'{self.workspace}/target/{project.name}'
         self.log_path = f"{self.workspace}/log/{self.project.name}/{int(datetime.now().timestamp())}.log"
@@ -66,15 +70,25 @@ class BuildService:
             self.after_progress(description='项目打包成功', percent=30)
 
             self.before_progress(description='构建镜像')
+            repository = f'{ConfigUtil.get_str_property(key=config.HARBOR_HOST)}/' \
+                f'{ConfigUtil.get_str_property(key=config.HARBOR_APP_PROJECT_NAME)}/' \
+                f'{self.project.name}'
             DockerService.build(
                 self.target_path,
                 tag=self.image_name,
                 console=self.console,
                 dockerfile='dockerfile',
             )
-            self.after_progress(description='镜像构建完成', percent=55)
+            self.after_progress(description='镜像构建完成', percent=35)
+            DockerService.push(
+                image_name=self.image_name,
+                repository=repository,
+                tag=self.branch,
+                console=self.console
+            )
+            self.after_progress(description='镜像构建完成', percent=20)
             self.status = 1
-            self.console('恭喜，构建成功!')
+            self.console('构建成功!')
         except Exception as e:
             log.exception(e)
             self.status = 2
@@ -144,6 +158,13 @@ class BuildService:
         with open(log_path) as f:
             content = f.read()
         return content
+
+    @classmethod
+    def recent_build(cls, user_name):
+        build_log = BuildLog.select().filter(
+            BuildLog.user_name == user_name
+        ).order_by(BuildLog.created_at.desc()).first()
+        return build_log
 
     # todo 启用定时任务，每个项目保留20次构建
     @classmethod

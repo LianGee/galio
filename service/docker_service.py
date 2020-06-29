@@ -7,6 +7,9 @@
 
 import docker
 
+import config
+from common.config_util import ConfigUtil
+from common.exception import ServerException
 from common.logger import Logger
 from model.project import Project
 
@@ -52,8 +55,11 @@ class DockerService:
         log.info('准备清理镜像')
         images = cls.client.images.list()
         for image in images:
-            if len(image.tags) == 0:
-                cls.client.images.remove(image.id, True, False)
+            try:
+                if len(image.tags) == 0:
+                    cls.client.images.remove(image.id, True, False)
+            except Exception as e:
+                log.exception(f'删除镜像{image.id}失败{e.__str__()}')
         log.info('镜像清理完毕')
 
     @classmethod
@@ -78,3 +84,30 @@ class DockerService:
                 info = build_log.get('stream', '').strip()
                 if len(info) > 0:
                     console(info)
+
+    @classmethod
+    def push(cls, image_name, repository, tag, console):
+        try:
+            console(f'开始推送镜像{image_name}到{repository}，请稍等...')
+            cls.client.api.tag(
+                image=image_name,
+                repository=repository,
+                tag=tag
+            )
+            response = cls.client.api.push(
+                repository=repository,
+                tag=tag,
+                stream=True,
+                decode=True,
+                auth_config={
+                    'username': ConfigUtil.get_str_property(config.HARBOR_USERNAME),
+                    'password': ConfigUtil.get_str_property(config.HARBOR_PASSWORD),
+                }
+            )
+            for line in response:
+                if line.get('error') is not None:
+                    raise ServerException(msg=line.get('error'))
+            console(f'推送镜像{image_name}到{repository}成功')
+        except Exception as e:
+            console(f'推送镜像{image_name}到{repository}失败：{e.__str__()}')
+            raise e

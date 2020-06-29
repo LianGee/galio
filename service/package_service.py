@@ -5,18 +5,17 @@
 # @Date  : 2020-06-19
 # @Desc  :
 import os
-import re
 import tarfile
 import time
 
 from jinja2 import Template
+from pynpm import NPMPackage
 
 from common.cmd_util import CmdUtil
 from common.constant import BuildType
 from common.exception import ServerException
 from model.project import Project
 from service.template_service import TemplateService
-from pynpm import NPMPackage
 
 
 class PackageService:
@@ -62,7 +61,7 @@ class PackageService:
         elif self.project.build_type == BuildType.MVN:
             pass
         elif self.project.build_type == BuildType.GRADLE:
-            pass
+            self.package_gradle()
         elif self.project.build_type == BuildType.USER_DEFINE:
             pass
         else:
@@ -85,15 +84,14 @@ class PackageService:
         for line in iter(p.stdout.readline, b''):
             line = line.rstrip().decode('utf8')
             self.console(line)
-        self.console('正在执行npm build，请稍后...')
+        self.console('正在执行npm build，此过程可能需要几分钟，请耐心等待...')
         p = pkg.run_script('build', '--report', wait=False)
         flag = True
         for line in iter(p.stdout.readline, b''):
             line = line.rstrip().decode('utf8', 'ignore')
             if '● Webpack' in line:
                 flag = False
-            progress = re.findall(r'\d+%', line)
-            if '✔ Webpack' in line or (len(progress) > 0 and '0' in line):
+            if '✔ Webpack' in line:
                 flag = True
             if line.isprintable() and flag:
                 self.console(line)
@@ -123,3 +121,11 @@ class PackageService:
                     arcname=arcname
                 )
         t.close()
+
+    '''
+        将源代码打包成jar包
+    '''
+
+    def package_gradle(self):
+        cmd = f'cd {self.code_path} && gradle clean build'
+        CmdUtil.run(cmd, console=self.console)

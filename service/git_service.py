@@ -42,7 +42,7 @@ class GitService:
     def pull_project(self):
         self.console('初始化仓库')
         self.init()
-        self.console(f'切换到{self.branch}分支')
-        self.check_out_branch()
         self.console('拉取代码')
         self.pull()
+        self.console(f'切换到{self.branch}分支')
+        self.check_out_branch()

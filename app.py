@@ -17,6 +17,7 @@ from view.db_inst import db_inst_bp
 from view.deploy import deploy_bp
 from view.docker import docker_bp
 from view.domain import domain_bp
+from view.harbor import harbor_bp
 from view.k8s import k8s_bp
 from view.project import project_bp
 from view.template import template_bp
@@ -44,6 +45,7 @@ app.register_blueprint(docker_bp, url_prefix='/docker')
 app.register_blueprint(deploy_bp, url_prefix='/deploy')
 app.register_blueprint(domain_bp, url_prefix='/domain')
 app.register_blueprint(cloud_host_bp, url_prefix='/cloud_host')
+app.register_blueprint(harbor_bp, url_prefix='/harbor')
 
 
 @app.before_request

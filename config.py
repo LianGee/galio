@@ -62,3 +62,10 @@ K8S_NODE_PORT_RANGE = 'k8s.node.port.range'
 # domain
 DOMAIN_EXTERNAL = 'domain.external'
 DOMAIN_INTERNAL = 'domain.internal'
+
+# harbor
+HARBOR_HOST = 'harbor.host'
+HARBOR_BASE_PROJECT_NAME = 'harbor.base.project.name'
+HARBOR_APP_REPOSITORY = 'harbor.app.repository'
+HARBOR_USERNAME = 'harbor.username'
+HARBOR_PASSWORD = 'harbor.password'

@@ -11,6 +11,7 @@ import time
 from jinja2 import Template
 from pynpm import NPMPackage
 
+from common.cmd_util import CmdUtil
 from common.constant import BuildType
 from common.exception import ServerException
 from model.project import Project
@@ -60,7 +61,7 @@ class PackageService:
         elif self.project.build_type == BuildType.MVN:
             pass
         elif self.project.build_type == BuildType.GRADLE:
-            pass
+            self.package_gradle()
         elif self.project.build_type == BuildType.USER_DEFINE:
             pass
         else:
@@ -120,3 +121,11 @@ class PackageService:
                     arcname=arcname
                 )
         t.close()
+
+    '''
+        将源代码打包成jar包
+    '''
+
+    def package_gradle(self):
+        cmd = f'cd {self.code_path} && gradle clean build'
+        CmdUtil.run(cmd, console=self.console)

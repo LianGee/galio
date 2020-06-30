@@ -13,7 +13,6 @@ from model.project import Project
 
 class HarborService:
     harbor_host = ConfigUtil.get_str_property(key=config.HARBOR_HOST)
-    harbor_app_project_name = ConfigUtil.get_str_property(config.HARBOR_APP_PROJECT_NAME)
     harbor_api = f'https://{ConfigUtil.get_str_property(config.HARBOR_HOST)}/api'
     harbor_base_project_name = ConfigUtil.get_str_property(config.HARBOR_BASE_PROJECT_NAME)
 
@@ -67,13 +66,13 @@ class HarborService:
     @classmethod
     def list_project_image(cls, project_id):
         project = Project.select().get(project_id)
-        url = f'{cls.harbor_api}/repositories/{cls.harbor_app_project_name}/{project.name}/tags'
+        url = f'{cls.harbor_api}/repositories/{project.harbor_project}/{project.name}/tags'
         http_util = HttpUtil(url)
         tags = http_util.get().json()
         images = []
         for tag in tags:
             tag_name = tag.pop('name')
             images.append(dict({
-                'name': f'{cls.harbor_host}/{cls.harbor_app_project_name}/{project.name}:{tag_name}'
+                'name': f'{cls.harbor_host}/{project.harbor_project}/{project.name}:{tag_name}'
             }, **tag))
         return images

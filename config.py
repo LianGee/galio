@@ -66,6 +66,5 @@ DOMAIN_INTERNAL = 'domain.internal'
 # harbor
 HARBOR_HOST = 'harbor.host'
 HARBOR_BASE_PROJECT_NAME = 'harbor.base.project.name'
-HARBOR_APP_PROJECT_NAME = 'harbor.app.project.name'
 HARBOR_USERNAME = 'harbor.username'
 HARBOR_PASSWORD = 'harbor.password'

@@ -26,6 +26,7 @@ class Project(Model, BaseModel):
     base_image = Column(String)
     nginx_template_id = Column(BigInteger)
     nginx_proxies = Column(Text, default='[]')
+    harbor_project = Column(String, default='library')
     domain = Column(String)
     port = Column(Integer, default=30080)
     service_domain = Column(String)

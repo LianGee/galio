@@ -24,6 +24,15 @@ def save():
     return Response.success(data=ProjectService.save(project, g.user.name))
 
 
+@project_bp.route('/save/deploy/config', methods=['POST'])
+@login_required
+@log_this
+def save_deploy_config():
+    project_id = request.json.get('project_id')
+    deploy_config = request.json.get('deploy_config')
+    return Response.success(data=ProjectService.save_deploy_config(project_id, deploy_config))
+
+
 @project_bp.route('/list', methods=['GET'])
 @login_required
 @log_this

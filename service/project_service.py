@@ -36,18 +36,29 @@ class ProjectService:
             return data.get('id')
 
     @classmethod
+    def save_deploy_config(cls, project_id, deploy_config):
+        project = Project.select().get(project_id)
+        project.deploy_config = json.dumps(deploy_config)
+        project.update()
+        return True
+
+    @classmethod
     def list(cls, user_name):
         projects = Project.select().filter(Project.user_name == user_name).all()
         results = []
         for project in projects:
             project.nginx_proxies = json.loads(project.nginx_proxies or '[]')
+            project.deploy_config = json.loads(project.deploy_config or '{}')
             result = project.to_dict()
             results.append(result)
         return results
 
     @classmethod
     def query_project_by_id(cls, project_id):
-        return Project.select().get(project_id)
+        project = Project.select().get(project_id)
+        project.nginx_proxies = json.loads(project.nginx_proxies or '[]')
+        project.deploy_config = json.loads(project.deploy_config or '{}')
+        return project.to_dict()
 
     @classmethod
     def generate_valid_node_port(cls):

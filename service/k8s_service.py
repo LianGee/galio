@@ -113,9 +113,11 @@ class K8sService:
             watch=True,
             pretty=True,
             timeout_seconds=5,
+            limit=10
         )
         for event in stream:
             send_event(event.get('raw_object'))
+            time.sleep(0.05)
 
     @classmethod
     def get_namespaced_pod_log(
@@ -192,7 +194,7 @@ class K8sService:
         try:
             service_body = api_instance.read_namespaced_service(name=name, namespace=namespace, pretty=True)
             log.info(f'service name={name} namespace={namespace} 存在，删除该service {service_body}')
-            delete_response = api_instance.delete_namespaced_service(name=name, namespace=namespace)
+            delete_response = api_instance.delete_namespaced_service(name=name, namespace=namespace, pretty=True)
             log.info(f'删除 service name={name} namespace={namespace} {delete_response}')
         except kubernetes.client.rest.ApiException as e:
             if e.reason == 'Not Found':

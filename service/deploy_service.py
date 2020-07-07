@@ -6,9 +6,9 @@
 # @Desc  :
 import json
 import time
+import uuid
 
 import yaml
-from flask_socketio import emit
 from jinja2 import Template
 
 from common.constant import DeployStatus
@@ -32,64 +32,81 @@ class DeployService:
             project_id=project_id,
             image_name=image_name,
             user_name=user.name,
-            status=DeployStatus.INIT
+            status=DeployStatus.INIT,
+            uuid=uuid.uuid4().hex
         )
         log.info(f'{deploy_log.uuid}:{user.name}正在发布{project.name} 镜像 {image_name}')
         try:
-            if not K8sService.create_namespace(project.name, project.name):
-                raise ServerException('创建空间失败')
-            log.info(f'{deploy_log.uuid}:namespace {project.namespace} 校验成功')
+            namespace_response = K8sService.create_namespace(project.namespace)
+            log.info(f'{deploy_log.uuid}:namespace {project.namespace} 校验成功:{namespace_response}')
             deploy_log.status = DeployStatus.NAMESPACE
             template = TemplateService.get_template_by_id(project.deployment_template_id)
             deploy_template = Template(template.content)
-            deploy_template_yaml = yaml.safe_load(deploy_template.render(project=project.to_dict(), image_name=image_name))
+            deploy_template_yaml = yaml.safe_load(
+                deploy_template.render(project=project.to_dict(), image_name=image_name))
             log.info(f'{deploy_log.uuid}:发布镜像{json.dumps(deploy_template_yaml, indent=2)}')
             deployment_response = K8sService.create_namespaced_deployment(
                 name=project.name,
-                namespace=project.name,
+                namespace=project.namespace,
                 body=deploy_template_yaml
             )
             log.info(f'{deploy_log.uuid}:镜像发布成功{deployment_response}')
             deploy_log.status = DeployStatus.DEPLOYMENT
             # 创建service
-            template = TemplateService.get_template_by_id(project.svc_template_id)
-            service_template = Template(template.content)
-            service_template_yaml = yaml.safe_load(service_template.render(project=project.to_dict()))
-            log.info(f'{deploy_log.uuid}:发布service {json.dumps(service_template_yaml, indent=2)}')
-            service_response = K8sService.create_namespaced_service(
-                namespace=project.name,
-                name=project.name,
-                body=service_template_yaml
-            )
-            log.info(f'{deploy_log.uuid}:service发布成功{service_response}')
+            cls.deploy_service(project=project)
             deploy_log.status = DeployStatus.SERVICE
             # 创建ingress
-            template = TemplateService.get_template_by_id(project.ingress_template_id)
-            ingress_template = Template(template.content)
-            ingress_template_yaml = yaml.safe_load(ingress_template.render(project=project.to_dict()))
-            # ingress service 删除发布会造成不可访问，需要探索修改
-            log.info(f'{deploy_log.uuid}:发布ingress {json.dumps(ingress_template_yaml, indent=2)}')
-            ingress_response = K8sService.create_namespaced_ingress(
-                namespace=project.name,
-                name=project.name,
-                body=ingress_template_yaml
-            )
-            log.info(f'{deploy_log.uuid}:ingress发布成功{ingress_response}')
-            deploy_log.status = DeployStatus.INGRESS
+            if project.ingress_template_id:
+                cls.deploy_ingress(project=project)
+                deploy_log.status = DeployStatus.INGRESS
             return True
         except Exception as e:
             deploy_log.reason = e.__str__()
             log.exception(e)
-            raise e
+            raise ServerException(msg='发布失败')
         finally:
             deploy_log.insert()
 
     @classmethod
-    def delete_namespaced_pod(cls, name, namespace):
-        K8sService.delete_namespaced_pod(
-            name=name,
-            namespace=namespace
+    def deploy_service(cls, project: Project):
+        template = TemplateService.get_template_by_id(project.svc_template_id)
+        service_template = Template(template.content)
+        service_template_yaml = yaml.safe_load(service_template.render(project=project.to_dict()))
+        log.info(f'{project.name}:发布service {json.dumps(service_template_yaml, indent=2)}')
+        service_response = K8sService.create_namespaced_service(
+            namespace=project.namespace,
+            name=project.name,
+            body=service_template_yaml
         )
+        log.info(f'{project.name}:service发布成功{service_response}')
+
+    @classmethod
+    def deploy_ingress(cls, project: Project):
+        template = TemplateService.get_template_by_id(project.ingress_template_id)
+        ingress_template = Template(template.content)
+        ingress_template_yaml = yaml.safe_load(ingress_template.render(project=project.to_dict()))
+        log.info(f'{project.name}:发布ingress {json.dumps(ingress_template_yaml, indent=2)}')
+        ingress_response = K8sService.create_namespaced_ingress(
+            namespace=project.namespace,
+            name=project.name,
+            body=ingress_template_yaml
+        )
+        log.info(f'{project.name}:ingress发布成功{ingress_response}')
+
+    @classmethod
+    def delete_namespaced_pod(cls, project_id, name, namespace):
+        K8sService.delete_namespaced_pod(name=name, namespace=namespace)
+        project = Project.select().get(project_id)
+        cls.deploy_service(project)
+        cls.deploy_ingress(project)
+
+    @classmethod
+    def replace_namespaced_service(cls, namespace, name, body):
+        pass
+
+    @classmethod
+    def replace_namespaced_ingress(cls, namespace, name, body):
+        pass
 
     @classmethod
     def get_label_selector(cls, project_id):

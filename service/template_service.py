@@ -42,6 +42,7 @@ class TemplateService:
 
     @classmethod
     def preview_template(cls, content, project_id):
+        # todo image_name
         template = jinja2.Template(content)
         project = Project.select().get(project_id)
         return template.render(

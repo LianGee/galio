@@ -85,8 +85,11 @@ class DeployService:
             deploy_log.insert()
 
     @classmethod
-    def replace(cls, name, namespace):
-        pass
+    def delete_namespaced_pod(cls, name, namespace):
+        K8sService.delete_namespaced_pod(
+            name=name,
+            namespace=namespace
+        )
 
     @classmethod
     def get_label_selector(cls, project_id):

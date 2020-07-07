@@ -216,6 +216,15 @@ class K8sService:
         return response
 
     @classmethod
+    def delete_namespaced_pod(cls, name, namespace):
+        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
+        response = api_instance.delete_namespaced_pod(
+            name=name,
+            namespace=namespace
+        )
+        print(response)
+
+    @classmethod
     def convert_deployment(cls, response):
         deployments = []
         for deployment in response.items:

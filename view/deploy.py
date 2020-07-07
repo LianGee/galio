@@ -25,6 +25,18 @@ def start():
     return Response.success(data=DeployService.deploy(g.user, project_id, image_name))
 
 
+@deploy_bp.route('/delete/pod', methods=['DELETE'])
+@login_required
+@log_this
+def delete_pod():
+    name = request.json.get('name')
+    namespace = request.json.get('namespace')
+    return Response.success(data=DeployService.delete_namespaced_pod(
+        name=name,
+        namespace=namespace
+    ))
+
+
 @deploy_bp.route('/download/log', methods=['GET'])
 @login_required
 @log_this

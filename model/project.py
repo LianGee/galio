@@ -33,3 +33,4 @@ class Project(Model, BaseModel):
     deployment_template_id = Column(BigInteger)
     svc_template_id = Column(BigInteger)
     ingress_template_id = Column(BigInteger)
+    deploy_config = Column(Text, default='{}')

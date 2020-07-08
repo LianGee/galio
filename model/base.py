@@ -11,7 +11,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, BigInteger, Boolean
 
-from model.db import db_session
+from model.db import db_session, clean_db_session
 
 
 class BaseModel:
@@ -23,6 +23,9 @@ class BaseModel:
     @classmethod
     def get_session(cls):
         return db_session()
+
+    def __del__(self):
+        clean_db_session()
 
     @classmethod
     def select(cls, *args, **kwargs):

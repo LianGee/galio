@@ -113,9 +113,11 @@ class K8sService:
             watch=True,
             pretty=True,
             timeout_seconds=5,
+            limit=10
         )
         for event in stream:
             send_event(event.get('raw_object'))
+            time.sleep(0.05)
 
     @classmethod
     def get_namespaced_pod_log(
@@ -157,63 +159,69 @@ class K8sService:
         )
 
     @classmethod
-    def create_namespace(cls, name, namespace):
+    def create_namespace(cls, namespace):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
-        body = kubernetes.client.V1Namespace()
-        body.metadata = kubernetes.client.V1ObjectMeta(
-            name=name,
-            labels={
-                'name': namespace,
-            }
-        )
         try:
-            api_instance.create_namespace(body)
-            return True
+            return api_instance.read_namespace(name=namespace, pretty=True)
         except kubernetes.client.rest.ApiException as e:
-            body = json.loads(e.body)
-            if body.get('reason') == 'AlreadyExists':
-                return True
-            raise ServerException(f'创建namespace {namespace}失败')
+            if e.reason == 'Not Found':
+                body = kubernetes.client.V1Namespace()
+                body.metadata = kubernetes.client.V1ObjectMeta(
+                    name=namespace,
+                    labels={
+                        'name': namespace,
+                    }
+                )
+                return api_instance.create_namespace(body=body, pretty=True)
+        raise ServerException(f'创建namespace {namespace}失败')
 
     @classmethod
     def create_namespaced_deployment(cls, name, namespace, body):
         api_instance = kubernetes.client.AppsV1Api(cls.get_api_client())
         try:
-            api_instance.delete_namespaced_deployment(name=name, namespace=namespace)
+            deployment_body = api_instance.read_namespaced_deployment(name=name, namespace=namespace, pretty=True)
+            log.info(f'deployment name={name} namespace={namespace} 存在，删除该deployment {deployment_body}')
+            delete_response = api_instance.delete_namespaced_deployment(name=name, namespace=namespace, pretty=True)
+            log.info(f'删除 deployment name={name} namespace={namespace} {delete_response}')
         except kubernetes.client.rest.ApiException as e:
             if e.reason == 'Not Found':
-                log.info(f'namespace {namespace} deployment {name} exist, just created.')
-            else:
-                raise ServerException('删除namespaced deployment失败')
-        api_instance.create_namespaced_deployment(namespace=namespace, body=body)
-        response = api_instance.read_namespaced_deployment(name=name, namespace=namespace, pretty=True)
-        return response
+                log.info(f'deployment name={name} namespace={namespace} 不存在，直接创建')
+        return api_instance.create_namespaced_deployment(namespace=namespace, body=body, pretty=True)
 
     @classmethod
     def create_namespaced_service(cls, name, namespace, body):
         api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
         try:
-            api_instance.create_namespaced_service(namespace=namespace, body=body)
+            service_body = api_instance.read_namespaced_service(name=name, namespace=namespace, pretty=True)
+            log.info(f'service name={name} namespace={namespace} 存在，删除该service {service_body}')
+            delete_response = api_instance.delete_namespaced_service(name=name, namespace=namespace, pretty=True)
+            log.info(f'删除 service name={name} namespace={namespace} {delete_response}')
         except kubernetes.client.rest.ApiException as e:
-            body = json.loads(e.body)
-            if body.get('reason') == 'AlreadyExists':
-                return True
-            raise ServerException(f'创建service {name} namespace {namespace}失败')
-        response = api_instance.read_namespaced_service(name=name, namespace=namespace, pretty=True)
-        return response
+            if e.reason == 'Not Found':
+                log.info(f'service name={name} namespace={namespace} 不存在，直接创建')
+        return api_instance.create_namespaced_service(namespace=namespace, body=body, pretty=True)
 
     @classmethod
     def create_namespaced_ingress(cls, name, namespace, body):
         api_instance = kubernetes.client.ExtensionsV1beta1Api(cls.get_api_client())
         try:
-            api_instance.create_namespaced_ingress(namespace=namespace, body=body)
+            ingress_body = api_instance.read_namespaced_ingress(name=name, namespace=namespace, pretty=True)
+            log.info(f'ingress name={name} namespace={namespace} 存在，删除该ingress {ingress_body}')
+            delete_response = api_instance.delete_namespaced_ingress(namespace=namespace, name=name, pretty=True)
+            log.info(f'删除 service name={name} namespace={namespace} {delete_response}')
         except kubernetes.client.rest.ApiException as e:
-            body = json.loads(e.body)
-            if body.get('reason') == 'AlreadyExists':
-                return True
-            raise ServerException(f'创建ingress {name} namespace {namespace}失败')
-        response = api_instance.read_namespaced_ingress(name=name, namespace=namespace, pretty=True)
-        return response
+            if e.reason == 'Not Found':
+                log.info(f'ingress name={name} namespace={namespace} 不存在，直接创建')
+        return api_instance.create_namespaced_ingress(namespace=namespace, body=body, pretty=True)
+
+    @classmethod
+    def delete_namespaced_pod(cls, name, namespace):
+        api_instance = kubernetes.client.CoreV1Api(cls.get_api_client())
+        return api_instance.delete_namespaced_pod(
+            name=name,
+            namespace=namespace,
+            pretty=True,
+        )
 
     @classmethod
     def convert_deployment(cls, response):

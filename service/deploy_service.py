@@ -129,7 +129,7 @@ class DeployService:
 
     @classmethod
     def list_project_event(cls, project_id, send_event):
-        label_selector, project = cls.get_label_selector(project_id)
+        project = Project.select().get(project_id)
         K8sService.get_namespace_event(project.namespace, send_event)
 
     @classmethod

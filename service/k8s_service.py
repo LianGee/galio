@@ -116,8 +116,9 @@ class K8sService:
             limit=10
         )
         for event in stream:
-            send_event(event.get('raw_object'))
-            time.sleep(0.05)
+            raw_object = event.get('raw_object')
+            if raw_object.get('eventTime') and raw_object.get('type') == 'Error':
+                send_event(raw_object)
 
     @classmethod
     def get_namespaced_pod_log(
